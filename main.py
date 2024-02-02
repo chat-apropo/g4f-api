@@ -1,7 +1,7 @@
 import g4f
 from fastapi import FastAPI, HTTPException
 
-app = FastAPI()
+app = FastAPI(root_path="ai_api")
 
 @app.get("/3")
 def test(text: str):

@@ -12,6 +12,8 @@ class Completion(BaseModel):
     model: str
     messages: list[Message]
 
+app = FastAPI()
+
 @app.post("/")
 def test(completion: Completion):
     try:

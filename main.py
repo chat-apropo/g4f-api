@@ -1,12 +1,16 @@
 import g4f
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from typing import Literal
+
+class Message(BaseModel):
+    role: Literal["user", "assistant"]
+    message: str
+
 
 class Completion(BaseModel):
     model: str
-    messages: List[dict]
-
-app = FastAPI(root_path="ai_api")
+    messages: list[Message]
 
 @app.post("/")
 def test(completion: Completion):
@@ -15,7 +19,7 @@ def test(completion: Completion):
             model=completion.model,
             messages=completion.messages,
             stream=False)
-    except
+    except:
         raise HTTPException(status_code=404, detail="error")
     return {"message": response }
 

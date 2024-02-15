@@ -1,4 +1,7 @@
-fastapi
-g4f
-pydantic
-uvicorn
+fastapi==0.109.2
+g4f[image]
+g4f[openai]
+g4f[api]
+g4f[webdriver]
+pydantic==2.6.1
+uvicorn==0.27.1

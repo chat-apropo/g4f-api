@@ -1,4 +1,8 @@
 # g4f-api
-link: https://g4f-api-ko37.onrender.com 
 
-the api you made for mattf so he can freeload gpt queries on his stuff
+Alternative Api for getting text complections from the [g4f project](https://github.com/xtekky/gpt4free/tree/main)
+
+### Live at
+- https://g4f-api-ko37.onrender.com 
+- https://g4f-api.fly.dev/
+

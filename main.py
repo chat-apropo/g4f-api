@@ -11,7 +11,7 @@ all_models = list(ModelUtils.convert.keys())
 
 all_working_providers = [provider.__name__ for provider in g4f.Provider.__providers__ if provider.working]
 
-A = TypeVar("A", bound=str)
+A = TypeVar("A")
 
 
 def allowed_values(v: A, allowed: list[A]) -> A:

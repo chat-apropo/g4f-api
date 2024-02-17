@@ -14,7 +14,7 @@ def test_api_validation():
     app.dependency_overrides[chat_completion] = lambda: chat
 
     with TestClient(app) as client:
-        response = client.get(COMPLETION_PATH)
+        response = client.get("/")
         assert response.status_code == 200
 
         # Invalid model

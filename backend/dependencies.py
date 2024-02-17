@@ -1,12 +1,10 @@
-import json
 from typing import Literal, TypeVar
 
 import g4f
-from fastapi import Depends, FastAPI, Query, Request
+from fastapi import Query
 from fastapi.openapi.models import Example
-from fastapi.responses import JSONResponse, RedirectResponse
-from g4f.models import ModelUtils
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from g4f import ModelUtils
+from pydantic import BaseModel, ConfigDict, Field
 
 all_models = list(ModelUtils.convert.keys())
 
@@ -66,51 +64,3 @@ class CompletionParams:
 
 def chat_completion() -> type[g4f.ChatCompletion]:
     return g4f.ChatCompletion
-
-
-app = FastAPI()
-
-
-@app.exception_handler(ValueError)
-def throw_value_error(_: Request, exc: ValueError) -> JSONResponse:
-    return JSONResponse(status_code=422, content={"detail": str(exc)})
-
-
-@app.exception_handler(ValidationError)
-def throw_validation_error(_: Request, exc: ValidationError) -> JSONResponse:
-    return JSONResponse(status_code=422, content=json.loads(exc.json()))
-
-
-@app.get("/")
-def get_root():
-    return RedirectResponse(url="/docs")
-
-
-@app.post("/")
-def post_completion(
-    completion: CompletionRequest,
-    params: CompletionParams = Depends(),
-    chat: type[g4f.ChatCompletion] = Depends(chat_completion),
-):
-    response = chat.create(
-        model=params.model,
-        provider=params.provider,
-        messages=[msg.model_dump() for msg in completion.messages],
-        stream=False,
-    )
-    return {"completion": response}
-
-
-@app.get("/providers")
-def get_list_providers():
-    return {"providers": all_working_providers}
-
-
-@app.get("/models")
-def get_list_models():
-    return {"models": all_models}
-
-
-@app.get("/health")
-def get_health_check():
-    return {"status": "ok"}

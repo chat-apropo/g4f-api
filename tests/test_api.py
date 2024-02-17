@@ -2,7 +2,8 @@ from unittest.mock import Mock
 
 import pytest
 from fastapi.testclient import TestClient
-from main import all_models, all_working_providers, app, chat_completion
+from backend import app
+from backend.dependencies import chat_completion, all_models, all_working_providers
 
 
 def test_api_validation():

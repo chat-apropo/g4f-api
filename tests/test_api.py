@@ -2,7 +2,6 @@ from unittest.mock import Mock
 
 import pytest
 from fastapi.testclient import TestClient
-
 from main import all_models, all_working_providers, app, chat_completion
 
 
@@ -16,19 +15,25 @@ def test_api_validation():
         assert response.status_code == 200
 
         # Invalid model
-        response = client.post("/", json={"model": "gpt2", "messages": [{"role": "user", "content": "Hello"}]})
+        response = client.post(
+            "/", params={"model": "gpt-scheisse"}, json={"messages": [{"role": "user", "content": "Hello"}]}
+        )
         assert response.status_code == 422
 
         # Invalid provider
-        response = client.post("/", json={"provider": "gpt2", "messages": [{"role": "user", "content": "Hello"}]})
+        response = client.post(
+            "/", params={"provider": "xkdjak3jal"}, json={"messages": [{"role": "user", "content": "Hello"}]}
+        )
         assert response.status_code == 422
 
         # Valid model and provider given together
         response = client.post(
             "/",
-            json={
+            params={
                 "model": all_models[0],
                 "provider": all_working_providers[0],
+            },
+            json={
                 "messages": [{"role": "user", "content": "Hello"}],
             },
         )
@@ -41,7 +46,8 @@ def test_api_validation():
         # Valid request
         response = client.post(
             "/",
-            json={"model": all_models[0], "messages": [{"role": "user", "content": "Hello"}]},
+            params={"model": all_models[0]},
+            json={"messages": [{"role": "user", "content": "Hello"}]},
         )
         assert response.status_code == 200
         assert response.json() == {"completion": "response"}
@@ -57,14 +63,16 @@ def test_all_provider_model_combination(model, provider):
     with TestClient(app) as client:
         response = client.post(
             "/",
-            json={"model": model, "messages": [{"role": "user", "content": "Hello"}]},
+            params={"model": model},
+            json={"messages": [{"role": "user", "content": "Hello"}]},
         )
         assert response.status_code == 200
         assert response.json() == {"completion": "response"}
 
         response = client.post(
             "/",
-            json={"provider": provider, "messages": [{"role": "user", "content": "Hello"}]},
+            params={"provider": provider},
+            json={"messages": [{"role": "user", "content": "Hello"}]},
         )
         assert response.status_code == 200
         assert response.json() == {"completion": "response"}

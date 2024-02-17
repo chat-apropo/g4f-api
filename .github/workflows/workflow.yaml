@@ -31,8 +31,9 @@ jobs:
         run: ruff --output-format=github .
         continue-on-error: true
 
-  deploy:
-    name: Deploy app
+  deploy-fly:
+    name: Deploy prod app to https://g4f-api.fly.dev/
+    # Only from main branch
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
@@ -41,3 +42,26 @@ jobs:
       - run: flyctl deploy --remote-only
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+
+  deploy-caprover:
+    # Always deploy
+    name: Deploy dev app to https://g4f-api.cloud.mattf.one/
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: g4f-api
+      - uses: a7ul/tar-action@v1.1.0
+        with:
+          command: c
+          cwd: "./"
+          files: "g4f-api/"
+          outPath: deploy.tar
+
+      - name: Deploy App to CapRover
+        uses: caprover/deploy-from-github@v1.0.1
+        with:
+          server: '${{ secrets.CAPROVER_SERVER }}'
+          app: '${{ secrets.APP_NAME }}'
+          token: '${{ secrets.APP_TOKEN }}'

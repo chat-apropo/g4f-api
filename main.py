@@ -1,13 +1,12 @@
 import json
-from functools import partial
-from typing import Annotated, Any, Literal, TypeVar
+from typing import Literal, TypeVar
 
 import g4f
 from fastapi import Depends, FastAPI, Query, Request
 from fastapi.openapi.models import Example
 from fastapi.responses import JSONResponse, RedirectResponse
 from g4f.models import ModelUtils
-from pydantic import AfterValidator, BaseModel, ConfigDict, Field, ValidationError, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 all_models = list(ModelUtils.convert.keys())
 
@@ -16,11 +15,11 @@ all_working_providers = [provider.__name__ for provider in g4f.Provider.__provid
 A = TypeVar("A")
 
 
-def create_example_dict(values: list) -> dict[str, Example]:
-    return {str(v): Example(value=v) for v in values}
+def generate_examples_from_values(values: list) -> dict[str, Example]:
+    return {str(v or "--"): Example(value=v) for v in values}
 
 
-def allowed_values_or_none(v: A, allowed: list[A]) -> A:
+def allowed_values_or_none(v: A | None, allowed: list[A]) -> A | None:
     if v is None:
         return v
     if v not in allowed:
@@ -38,29 +37,31 @@ class CompletionRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class CompletionParams(BaseModel):
-    model: Annotated[str | None, AfterValidator(partial(allowed_values_or_none, allowed=all_models))] = Query(
-        None,
-        description="LLM model to use for completion. Cannot be specified together with provider.",
-        openapi_examples=create_example_dict(all_models),
-    )
-    provider: Annotated[
-        Annotated[str, None] | None,
-        AfterValidator(partial(allowed_values_or_none, allowed=all_working_providers)),
-    ] = Query(
-        None,
-        description="Provider to use for completion. Cannot be specified together with model.",
-        openapi_examples=create_example_dict(all_working_providers),
-    )
-    model_config = ConfigDict(extra="forbid")
-
-    @model_validator(mode="before")
-    def model_xor_provider(cls, values: dict[str, Any]):
-        if values.get("model") and values.get("provider"):
+class CompletionParams:
+    def __init__(
+        self,
+        model: str
+        | None = Query(
+            None,
+            description="LLM model to use for completion. Cannot be specified together with provider.",
+            openapi_examples=generate_examples_from_values([None] + all_models),
+        ),
+        provider: str
+        | None = Query(
+            None,
+            description="Provider to use for completion. Cannot be specified together with model.",
+            openapi_examples=generate_examples_from_values([None] + all_working_providers),
+        ),
+    ):
+        allowed_values_or_none(model, all_models)
+        allowed_values_or_none(provider, all_working_providers)
+        if model and provider:
             raise ValueError("model and provider cannot be provided together yet")
-        if not (values.get("model") or values.get("provider")):
+        if not (model or provider):
             raise ValueError("one of model or provider must be specified")
-        return values
+
+        self.model = model
+        self.provider = provider
 
 
 def chat_completion() -> type[g4f.ChatCompletion]:

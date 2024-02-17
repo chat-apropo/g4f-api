@@ -47,12 +47,16 @@ jobs:
   deploy-caprover:
     # Always deploy
     name: Deploy dev app to https://g4f-api.cloud.mattf.one/
+    runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+        with:
+          path: g4f-api
       - uses: a7ul/tar-action@v1.1.0
         with:
           command: c
           cwd: "./"
-          files: ./*
+          files: "g4f-api/"
           outPath: deploy.tar
 
       - name: Deploy App to CapRover

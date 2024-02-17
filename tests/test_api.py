@@ -1,9 +1,11 @@
 from unittest.mock import Mock
 
 import pytest
-from fastapi.testclient import TestClient
 from backend import app
-from backend.dependencies import chat_completion, all_models, all_working_providers
+from backend.dependencies import all_models, all_working_providers, chat_completion
+from fastapi.testclient import TestClient
+
+COMPLETION_PATH = "/api/completions"
 
 
 def test_api_validation():
@@ -12,24 +14,26 @@ def test_api_validation():
     app.dependency_overrides[chat_completion] = lambda: chat
 
     with TestClient(app) as client:
-        response = client.get("/")
+        response = client.get(COMPLETION_PATH)
         assert response.status_code == 200
 
         # Invalid model
         response = client.post(
-            "/", params={"model": "gpt-scheisse"}, json={"messages": [{"role": "user", "content": "Hello"}]}
+            COMPLETION_PATH, params={"model": "gpt-scheisse"}, json={"messages": [{"role": "user", "content": "Hello"}]}
         )
         assert response.status_code == 422
 
         # Invalid provider
         response = client.post(
-            "/", params={"provider": "xkdjak3jal"}, json={"messages": [{"role": "user", "content": "Hello"}]}
+            COMPLETION_PATH,
+            params={"provider": "xkdjak3jal"},
+            json={"messages": [{"role": "user", "content": "Hello"}]},
         )
         assert response.status_code == 422
 
         # Valid model and provider given together
         response = client.post(
-            "/",
+            COMPLETION_PATH,
             params={
                 "model": all_models[0],
                 "provider": all_working_providers[0],
@@ -41,12 +45,12 @@ def test_api_validation():
         assert response.status_code == 422
 
         # Both model and provider missing
-        response = client.post("/", json={"messages": [{"role": "user", "content": "Hello"}]})
+        response = client.post(COMPLETION_PATH, json={"messages": [{"role": "user", "content": "Hello"}]})
         assert response.status_code == 422
 
         # Valid request
         response = client.post(
-            "/",
+            COMPLETION_PATH,
             params={"model": all_models[0]},
             json={"messages": [{"role": "user", "content": "Hello"}]},
         )
@@ -63,7 +67,7 @@ def test_all_provider_model_combination(model, provider):
 
     with TestClient(app) as client:
         response = client.post(
-            "/",
+            COMPLETION_PATH,
             params={"model": model},
             json={"messages": [{"role": "user", "content": "Hello"}]},
         )
@@ -71,7 +75,7 @@ def test_all_provider_model_combination(model, provider):
         assert response.json() == {"completion": "response"}
 
         response = client.post(
-            "/",
+            COMPLETION_PATH,
             params={"provider": provider},
             json={"messages": [{"role": "user", "content": "Hello"}]},
         )

@@ -3,4 +3,5 @@ g4f[openai]
 g4f[api]
 g4f[webdriver]
 pydantic==2.6.1
+pydantic-settings==2.2.0
 uvicorn==0.27.1

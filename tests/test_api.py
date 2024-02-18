@@ -19,7 +19,7 @@ def test_api_validation():
 
         # Invalid model
         response = client.post(
-            COMPLETION_PATH, params={"model": "gpt-scheisse"}, json={"messages": [{"role": "user", "content": "Hello"}]}
+            COMPLETION_PATH, params={"model": "Kjf0ajL0gjlskb0K"}, json={"messages": [{"role": "user", "content": "Hello"}]}
         )
         assert response.status_code == 422
 

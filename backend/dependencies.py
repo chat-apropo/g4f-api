@@ -51,12 +51,15 @@ class CompletionParams:
             openapi_examples=generate_examples_from_values([None] + all_working_providers),
         ),
     ):
-        allowed_values_or_none(model, all_models)
-        allowed_values_or_none(provider, all_working_providers)
+        provider = provider or None
+        model = model or None
         if model and provider:
             raise ValueError("model and provider cannot be provided together yet")
         if not (model or provider):
             raise ValueError("one of model or provider must be specified")
+
+        allowed_values_or_none(model, all_models)
+        allowed_values_or_none(provider, all_working_providers)
 
         self.model = model
         self.provider = provider
@@ -64,3 +67,14 @@ class CompletionParams:
 
 def chat_completion() -> type[g4f.ChatCompletion]:
     return g4f.ChatCompletion
+
+
+class CompletionResponse(BaseModel):
+    completion: str = Field(..., description="Completion of the messages")
+
+
+class UiCompletionRequest(BaseModel):
+    message: str = Field(..., description="Current message from text input")
+    model: str = Field(..., description="Model to use for completion")
+    provider: str = Field(..., description="Provider to use for completion")
+    history: list[Message] = Field(default_factory=list, description="History of past messages")

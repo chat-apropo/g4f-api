@@ -8,5 +8,6 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+TEMPLATES_PATH = "static"
 
 __all__ = ["settings"]

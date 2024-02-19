@@ -1,0 +1,18 @@
+{% for message in messages %}
+<div class="message">
+  <div class={{ "assistant" if message.role=="assistant" else "user" }}>
+    <div class="hidden">
+      <!-- This makes it easier to parse and add to the history in the htmx handler-->
+      {{ message.content }}
+    </div>
+    <h3>{{ "Assistant:" if message.role == "assistant" else "You:" }}</h3>
+    <p>
+      <zero-md>
+        <script type="text/markdown">
+        {{ message.content }}
+        </script>
+      </zero-md>
+    </p>
+  </div>
+</div>
+{% endfor %}

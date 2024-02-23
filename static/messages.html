@@ -1,15 +1,15 @@
 {% for message in messages %}
-<div class="message">
-  <div class={{ "assistant" if message.role=="assistant" else "user" }}>
+<div class="message card row w-100 mt-3">
+  <div class="{{ " assistant" if message.role=="assistant" else "user" }} card-body p-2">
     <div class="hidden">
       <!-- This makes it easier to parse and add to the history in the htmx handler-->
       {{ message.content }}
     </div>
-    <h3>{{ "Assistant:" if message.role == "assistant" else "You:" }}</h3>
-    <p>
+    <h4 class="card-title">{{ "Assistant:" if message.role == "assistant" else "You:" }}</h4>
+    <p class="card-text">
       <zero-md>
         <script type="text/markdown">
-        {{ message.content }}
+{{ message.content }}
         </script>
       </zero-md>
     </p>

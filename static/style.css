@@ -1,6 +1,5 @@
 body {
   font-family: Arial, sans-serif;
-  margin: 0 0 0 10vw;
   padding: 0;
 }
 
@@ -21,31 +20,26 @@ body {
 }
 
 #input {
-  width: 50vw;
-  max-height: 20vh;
-  padding: 12px 20px;
-  margin: 8px 0;
-  display: inline-block;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  border-radius: 10px;
+  resize: none;
   box-sizing: border-box;
+  height: 100%;
+  overflow-y: hidden;
+}
+
+.card-body {
+  padding: 0;
 }
 
 #chat {
   position: relative;
-  width: 80vw;
-  display: grid;
   place-items: left;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  box-sizing: border-box;
-  min-height: 80vh;
-  max-height: 80vh;
-  overflow-y: scroll;
+  min-height: 75vh;
+  max-height: 75vh;
+  overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column-reverse;
-  padding-left: 20px;
-  padding-right: 20px;
 }
 
 #spinner {
@@ -57,12 +51,11 @@ body {
   width: 95%;
 }
 
-.message {
-  border: 1px solid #ccc;
-  margin: 20px -8px 8px 0;
-  padding: 12px 20px;
-  width: 95%;
-  border-radius: 12px;
-  background-color: #f2f2f2;
-  display: inline-block;
+#form-container {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+#loading {
+  fill: #e0e0e0;
 }

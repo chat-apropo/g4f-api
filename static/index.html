@@ -1,8 +1,7 @@
 <!DOCTYPE html>
-<html>
+<html lang="en" lang="en" data-bs-theme="dark">
 
 <head>
-  <html lang="en">
   <title>G4F UI</title>
 
   <meta charset="utf-8">
@@ -12,65 +11,83 @@
   <script src="https://unpkg.com/htmx.org@^1.9.10/dist/htmx.js"></script>
   <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@webcomponents/webcomponentsjs@2/webcomponents-loader.min.js"></script>
-  <script type="module" src="https://cdn.jsdelivr.net/gh/zerodevx/zero-md@1/src/zero-md.min.js"></script>
+  <script>
+    window.ZeroMdConfig = {
+      cssUrls: [
+        'https://cdn.jsdelivr.net/gh/hyrious/github-markdown-css@main/dist/dark.css',
+        'https://raw.githubusercontent.com/PrismJS/prism-themes/master/themes/prism-lucario.css',
+      ]
+    }
+  </script>
+  <script type="module" src="https://cdn.jsdelivr.net/gh/zerodevx/zero-md@2/dist/zero-md.min.js"></script>
 
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css">
 </head>
 
 <body>
-  <h1> G4F UI </h1>
-  <p>Simple UI for testing the API using htmx</p>
-  <!-- Message box with assistent and you cards jinja2 for loop -->
-  <div id="chat">
-    <div id="messages">
-    </div>
-    <div id="spinner">
-      <img id="loading" class="htmx-indicator" src="/static/spinner.svg">
+  <div class="container-lg mt-1">
+    <div class="card">
+      <div class="card-header">
+        <h1> G4F UI </h1>
+        <p>Simple UI for testing the API</p>
+      </div>
+      <div class="card-body">
+        <div id="chat" class="container-md p-5">
+          <div id="messages" class="column">
+          </div>
+          <div id="spinner">
+            <img id="loading" class="htmx-indicator" src="/static/spinner.svg">
+          </div>
+        </div>
+      </div>
+
+      <div class="container-lg" id="form-container">
+        <div class="form-group">
+          <form hx-post="/app/completions" hx-target="#messages" hx-swap="beforeend" hx-ext='json-enc' id="form"
+            hx-on::before-request="addMessage('user', this.input.value); this.input.value = ''; this.input.disabled = true; this.btnSubmit.disabled = true;"
+            hx-on::after-request="this.input.disabled = false; this.btnSubmit.disabled = false; this.input.focus();"
+            hx-include="#messages"
+            hx-vals='js:{ "message": this.input.value, "model": this.model.value, "provider": this.provider.value, "history": getHistory() }'
+            hx-indicator="#loading">
+
+            <div class="container">
+              <div class="row">
+                <div class="col-7">
+                  <textarea name="message" placeholder="Enter your message" id="input" autofocus autocomplete="off"
+                    class="form-control"></textarea>
+                </div>
+                <button type="submit" id="btnSubmit" class="btn btn-primary col-2">Send</button>
+
+                <div class="dropdowns col align-self-end">
+                  <div class="row justify-content-end">
+                    <div class="col-md-4 col-md-offset-2"></div>
+                    <label for="model" class="form-label text-right col align-self-end ">Model:</label>
+                    <select name="model" id="model" class="col align-self-end form-select">
+                      {% for model in all_models %}
+                      <option value="{{ model }}" {{ "selected" if model==default_model else "" }}>{{ model }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="row justify-content-end">
+                    <div class="col-md-4 col-md-offset-2"></div>
+                    <label for="provider" class="form-label col align-self-end ">Provider:</label>
+                    <select name="provider" id="provider" class="col align-self-end form-select">
+                      {% for provider in all_providers %}
+                      <option value="{{ provider }}">{{ provider }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   </div>
 
-  <form hx-post="/app/completions" hx-target="#messages" hx-swap="beforeend" hx-ext='json-enc'
-    hx-on::before-request="addMessage('user', this.input.value); this.input.value = ''; this.input.disabled = true; this.btnSubmit.disabled = true;"
-    hx-on::after-request="this.input.disabled = false; this.btnSubmit.disabled = false; this.input.focus();"
-    hx-include="#messages"
-    hx-vals='js:{ "message": this.input.value, "model": this.model.value, "provider": this.provider.value, "history": getHistory() }'
-    hx-indicator="#loading">
-
-    <input type="textarea" lines=2 name="message" placeholder="Enter your message" id="input" autofocus
-      autocomplete="off">
-    <button type="submit" id="btnSubmit">Send</button>
-
-    <select name="model" id="model">
-      {% for model in all_models %}
-      <option value="{{ model }}" {{ "selected" if model==default_model else "" }}>{{ model }}</option>
-      {% endfor %}
-    </select>
-    <select name="provider" id="provider">
-      {% for provider in all_providers %}
-      <option value="{{ provider }}">{{ provider }}</option>
-      {% endfor %}
-    </select>
-  </form>
-
-  <script>
-    var messageHistory = [];
-    function addMessage(role, content) {
-      messageHistory.push({"role": role, "content": content});
-    }
-    function getHistory() {
-      return messageHistory;
-    }
-    document.addEventListener('htmx:afterRequest', function (evt) {
-      if (evt.detail.xhr.status != 200 || evt.detail.successful != true) {
-        // TODO: handle error in UI
-        console.error(evt);
-        return;
-      }
-      if (evt.detail.target.id == 'messages') {
-        addMessage('assistant', evt.detail.target.lastElementChild.querySelector("div.hidden").innerText.trim());
-      }
-    });
-  </script>
+  <script src="/static/script.js"></script>
 
 </body>
 

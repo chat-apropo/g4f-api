@@ -5,7 +5,6 @@ from fastapi.templating import Jinja2Templates
 
 from backend.dependencies import (
     CompletionParams,
-    CompletionRequest,
     CompletionResponse,
     Message,
     UiCompletionRequest,
@@ -13,6 +12,7 @@ from backend.dependencies import (
     all_working_providers,
     chat_completion,
 )
+from backend.models import CompletionRequest
 from backend.settings import TEMPLATES_PATH
 
 router_root = APIRouter()

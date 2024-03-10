@@ -1,14 +1,25 @@
-from typing import Literal, TypeVar
+from typing import TypeVar
 
 import g4f
 from fastapi import Query
 from fastapi.openapi.models import Example
-from g4f import ModelUtils
-from pydantic import BaseModel, ConfigDict, Field
+from g4f import ModelUtils, ProviderModelMixin
+from pydantic import BaseModel, Field
+
+from backend.models import CompletionProvider, Message
 
 all_models = list(ModelUtils.convert.keys())
 
-all_working_providers = [provider.__name__ for provider in g4f.Provider.__providers__ if provider.working]
+all_working_providers: list[CompletionProvider] = [
+    CompletionProvider(
+        name=provider.__name__,
+        supported_models=provider.models
+        if isinstance(provider, ProviderModelMixin)
+        else [],
+    )
+    for provider in g4f.Provider.__providers__
+    if provider.working
+]
 
 A = TypeVar("A")
 
@@ -25,30 +36,20 @@ def allowed_values_or_none(v: A | None, allowed: list[A]) -> A | None:
     return v
 
 
-class Message(BaseModel):
-    role: Literal["user", "assistant"] = Field(..., description="Who is sending the message")
-    content: str = Field(..., description="Content of the message")
-
-
-class CompletionRequest(BaseModel):
-    messages: list[Message] = Field(..., description="List of messages to use for completion")
-    model_config = ConfigDict(extra="forbid")
-
-
 class CompletionParams:
     def __init__(
         self,
-        model: str
-        | None = Query(
+        model: str | None = Query(
             None,
             description="LLM model to use for completion. Cannot be specified together with provider.",
             openapi_examples=generate_examples_from_values([None] + all_models),
         ),
-        provider: str
-        | None = Query(
+        provider: str | None = Query(
             None,
             description="Provider to use for completion. Cannot be specified together with model.",
-            openapi_examples=generate_examples_from_values([None] + all_working_providers),
+            openapi_examples=generate_examples_from_values(
+                [None] + all_working_providers
+            ),
         ),
     ):
         provider = provider or None
@@ -77,4 +78,6 @@ class UiCompletionRequest(BaseModel):
     message: str = Field(..., description="Current message from text input")
     model: str = Field(..., description="Model to use for completion")
     provider: str = Field(..., description="Provider to use for completion")
-    history: list[Message] = Field(default_factory=list, description="History of past messages")
+    history: list[Message] = Field(
+        default_factory=list, description="History of past messages"
+    )

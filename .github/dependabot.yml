@@ -3,4 +3,11 @@ updates:
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "pip"
+    directory: "/"
+    allow:
+      - dependency-name: "g4f*"
+    schedule:
       interval: "daily"

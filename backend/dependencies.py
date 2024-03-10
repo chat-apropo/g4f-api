@@ -4,22 +4,61 @@ import g4f
 from fastapi import Query
 from fastapi.openapi.models import Example
 from g4f import ModelUtils, ProviderModelMixin
+from g4f.models import RetryProvider
 from pydantic import BaseModel, Field
 
-from backend.models import CompletionProvider, Message
+from backend.models import CompletionModel, CompletionProvider, Message
 
-all_models = list(ModelUtils.convert.keys())
-
-all_working_providers: list[CompletionProvider] = [
-    CompletionProvider(
-        name=provider.__name__,
-        supported_models=provider.models
-        if isinstance(provider, ProviderModelMixin)
-        else [],
-    )
+g4f_working_providers_map = {
+    provider.__name__: provider
     for provider in g4f.Provider.__providers__
     if provider.working
-]
+}
+all_working_provider_names: list[str] = list(g4f_working_providers_map.keys())
+all_working_providers_map: dict[str, CompletionProvider] = {}
+
+all_model_names = list(ModelUtils.convert.keys())
+all_models_map: dict[str, CompletionModel] = {}
+
+for model_name in all_model_names:
+    model = ModelUtils.convert[model_name]
+    best_providers = set([model.base_provider])
+
+    # Retry providers contain multiple recomendations
+    if isinstance(model.best_provider, RetryProvider):
+        best_providers.update([p.__name__ for p in model.best_provider.providers])
+    else:
+        best_providers.add(model.best_provider.__name__)
+
+    complation_model = CompletionModel(
+        name=model.name, supported_provider_names=best_providers
+    )
+    all_models_map[model_name] = complation_model
+
+    # Populate providers with recomended models
+    for provider_name in best_providers:
+        if provider_name not in all_working_providers_map:
+            all_working_providers_map[provider_name] = CompletionProvider(
+                name=provider_name,
+                supported_models=set(),
+                url=g4f_working_providers_map[provider_name].url
+                if provider_name in g4f_working_providers_map
+                else "",
+            )
+        all_working_providers_map[provider_name].supported_models.add(model.name)
+
+# ProviderMixins also have models directly associated with them
+for provider in g4f.Provider.__providers__:
+    if not provider.working:
+        continue
+    if (
+        isinstance(provider, ProviderModelMixin)
+        and provider.__name__ in all_working_providers_map
+    ):
+        all_working_providers_map[provider.__name__].supported_models.update(
+            provider.models
+        )
+
 
 A = TypeVar("A")
 
@@ -42,13 +81,13 @@ class CompletionParams:
         model: str | None = Query(
             None,
             description="LLM model to use for completion. Cannot be specified together with provider.",
-            openapi_examples=generate_examples_from_values([None] + all_models),
+            openapi_examples=generate_examples_from_values([None] + all_model_names),
         ),
         provider: str | None = Query(
             None,
             description="Provider to use for completion. Cannot be specified together with model.",
             openapi_examples=generate_examples_from_values(
-                [None] + all_working_providers
+                [None] + all_working_provider_names
             ),
         ),
     ):
@@ -59,8 +98,8 @@ class CompletionParams:
         if not (model or provider):
             raise ValueError("one of model or provider must be specified")
 
-        allowed_values_or_none(model, all_models)
-        allowed_values_or_none(provider, all_working_providers)
+        allowed_values_or_none(model, all_model_names)
+        allowed_values_or_none(provider, all_working_provider_names)
 
         self.model = model
         self.provider = provider

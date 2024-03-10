@@ -4,5 +4,5 @@ g4f[api]==0.2.3.0
 g4f[webdriver]==0.2.3.0
 pydantic==2.6.1
 pydantic-settings==2.2.0
-uvicorn==0.27.1
+uvicorn==0.28.0
 jinja2==3.1.3

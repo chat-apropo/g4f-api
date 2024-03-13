@@ -1,5 +1,5 @@
 fastapi==0.110.0
-g4f[openai]==0.2.3.0
+g4f[openai]==0.2.4.0
 g4f[api]==0.2.3.0
 g4f[webdriver]==0.2.3.0
 pydantic==2.6.3

@@ -4,7 +4,11 @@ import pytest
 from fastapi.testclient import TestClient
 
 from backend import app
-from backend.dependencies import all_models, all_working_providers, chat_completion
+from backend.dependencies import (
+    all_model_names,
+    all_working_provider_names,
+    chat_completion,
+)
 
 COMPLETION_PATH = "/api/completions"
 
@@ -38,8 +42,8 @@ def test_api_validation():
         response = client.post(
             COMPLETION_PATH,
             params={
-                "model": all_models[0],
-                "provider": all_working_providers[0],
+                "model": all_model_names[0],
+                "provider": all_working_provider_names[0],
             },
             json={
                 "messages": [{"role": "user", "content": "Hello"}],
@@ -56,15 +60,15 @@ def test_api_validation():
         # Valid request
         response = client.post(
             COMPLETION_PATH,
-            params={"model": all_models[0]},
+            params={"model": all_model_names[0]},
             json={"messages": [{"role": "user", "content": "Hello"}]},
         )
         assert response.status_code == 200
         assert response.json() == {"completion": "response"}
 
 
-@pytest.mark.parametrize("model", all_models)
-@pytest.mark.parametrize("provider", all_working_providers)
+@pytest.mark.parametrize("model", all_model_names)
+@pytest.mark.parametrize("provider", all_working_provider_names)
 def test_all_provider_model_combination(model, provider):
     chat = Mock()
     chat.create.return_value = "response"

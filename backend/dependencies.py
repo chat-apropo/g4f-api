@@ -93,16 +93,20 @@ class CompletionParams:
     ):
         provider = provider or None
         model = model or None
-        if model and provider:
-            raise ValueError("model and provider cannot be provided together yet")
         if not (model or provider):
-            raise ValueError("one of model or provider must be specified")
+            raise ValueError("one of model or provider must be specified at least")
 
         allowed_values_or_none(model, all_model_names)
         allowed_values_or_none(provider, all_working_provider_names)
+        if model and provider:
+            if (
+                provider not in all_working_providers_map
+                or model not in all_working_providers_map[provider].supported_models
+            ):
+                raise ValueError(f"Model {model} not supported by provider {provider}")
 
-        self.model = model
         self.provider = provider
+        self.model = model
 
 
 def chat_completion() -> type[g4f.ChatCompletion]:

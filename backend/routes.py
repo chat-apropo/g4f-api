@@ -5,14 +5,16 @@ from fastapi.templating import Jinja2Templates
 
 from backend.dependencies import (
     CompletionParams,
-    CompletionRequest,
     CompletionResponse,
     Message,
     UiCompletionRequest,
-    all_models,
-    all_working_providers,
+    all_model_names,
+    all_models_map,
+    all_working_provider_names,
+    all_working_providers_map,
     chat_completion,
 )
+from backend.models import CompletionRequest
 from backend.settings import TEMPLATES_PATH
 
 router_root = APIRouter()
@@ -50,12 +52,12 @@ def post_completion(
 
 @router_api.get("/providers")
 def get_list_providers():
-    return {"providers": all_working_providers}
+    return all_working_providers_map
 
 
 @router_api.get("/models")
 def get_list_models():
-    return {"models": all_models}
+    return all_models_map
 
 
 @router_api.get("/health")
@@ -74,8 +76,8 @@ def get_ui(request: Request) -> HTMLResponse:
         name="index.html",
         request=request,
         context={
-            "all_models": all_models,
-            "all_providers": [""] + all_working_providers,
+            "all_models": all_model_names,
+            "all_providers": [""] + all_working_provider_names,
             "default_model": "gpt-4",
         },
     )

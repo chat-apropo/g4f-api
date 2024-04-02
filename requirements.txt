@@ -1,4 +1,4 @@
-fastapi==0.110.0
+fastapi==0.110.1
 g4f[openai,api,webdriver]==0.2.7.1
 pydantic==2.6.4
 pydantic-settings==2.2.1

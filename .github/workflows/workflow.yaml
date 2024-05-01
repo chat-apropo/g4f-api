@@ -30,3 +30,11 @@ jobs:
       - name: Lint with Ruff
         run: ruff --output-format=github .
         continue-on-error: true
+
+  deploy:
+    name: Deploy app to https://g4f-api.cloud.mattf.one using coolify
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger coolify webhook
+        run: |
+            curl --request GET '${{ secrets.COOLIFY_WEBHOOK_URL }}' --header 'Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}'

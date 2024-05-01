@@ -3,12 +3,13 @@ from typing import Literal, TypeVar
 import g4f
 from fastapi import Query
 from fastapi.openapi.models import Example
-from g4f import ModelUtils
+from g4f import Provider
+from g4f.models import ModelUtils
 from pydantic import BaseModel, ConfigDict, Field
 
 all_models = list(ModelUtils.convert.keys())
 
-all_working_providers = [provider.__name__ for provider in g4f.Provider.__providers__ if provider.working]
+all_working_providers = [provider.__name__ for provider in Provider.__providers__ if provider.working]
 
 A = TypeVar("A")
 

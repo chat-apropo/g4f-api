@@ -30,18 +30,3 @@ jobs:
       - name: Lint with Ruff
         run: ruff --output-format=github .
         continue-on-error: true
-
-  deploy-caprover:
-    # Always deploy
-    name: Deploy dev app to https://g4f-api.cloud.mattf.one/
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Deploy App to CapRover
-        run: |
-          npm install -g caprover
-          caprover deploy \
-            --caproverUrl '${{ secrets.CAPROVER_SERVER }}' \
-            --appToken '${{ secrets.APP_TOKEN }}' \
-            --appName '${{ secrets.APP_NAME }}' \
-            -b '${{ github.head_ref || github.ref_name }} '

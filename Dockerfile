@@ -1,4 +1,5 @@
 FROM python:3.12.2-slim-bullseye
+RUN apk add --no-cache curl # fix healthcheck
 
 WORKDIR /backend
 COPY backend/ backend

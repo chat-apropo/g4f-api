@@ -1,4 +1,5 @@
 FROM python:3.12.2-slim-bullseye
+RUN apt-get update && apt-get install -y curl
 
 WORKDIR /backend
 COPY backend/ backend

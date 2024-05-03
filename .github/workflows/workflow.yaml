@@ -27,6 +27,7 @@ jobs:
       - name: Run tests
         run: python -m pytest tests/
 
-      - name: Lint with Ruff
-        run: ruff --output-format=github .
-        continue-on-error: true
+      # Run pre commit checks
+      - uses: pre-commit/action@v3.0.0
+        id: pre-commit-check
+        name: Pre Commit Checks

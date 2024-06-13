@@ -1,6 +1,6 @@
 fastapi==0.111.0
 g4f[openai,api,webdriver]==0.3.1.9
-pydantic==2.7.2
+pydantic==2.7.4
 pydantic-settings==2.3.1
 uvicorn==0.30.0
 jinja2==3.1.4

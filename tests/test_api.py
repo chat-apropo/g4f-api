@@ -37,22 +37,30 @@ def test_api_validation():
         )
         assert response.status_code == 422
 
+        model = list(
+            provider_and_models.all_working_providers_map[
+                provider_and_models.all_working_provider_names[0]
+            ].supported_models
+        )[0]
+        provider = provider_and_models.all_working_provider_names[0]
+
         # Valid model and provider given together
         response = client.post(
             COMPLETION_PATH,
             params={
-                "model": list(
-                    provider_and_models.all_working_providers_map[
-                        provider_and_models.all_working_provider_names[0]
-                    ].supported_models
-                )[0],
-                "provider": provider_and_models.all_working_provider_names[0],
+                "model": model,
+                "provider": provider,
             },
             json={
                 "messages": [{"role": "user", "content": "Hello"}],
             },
         )
         assert response.status_code == 200
+        assert response.json() == {
+            "completion": "response",
+            "model": model,
+            "provider": provider,
+        }
 
         # Both model and provider missing
         response = client.post(
@@ -67,7 +75,7 @@ def test_api_validation():
             json={"messages": [{"role": "user", "content": "Hello"}]},
         )
         assert response.status_code == 200
-        assert response.json() == {"completion": "response"}
+        assert response.json()["completion"] == "response"
 
 
 @pytest.mark.parametrize("model", provider_and_models.all_model_names)
@@ -84,7 +92,7 @@ def test_all_provider_model_combination(model, provider):
             json={"messages": [{"role": "user", "content": "Hello"}]},
         )
         assert response.status_code == 200
-        assert response.json() == {"completion": "response"}
+        assert response.json()["completion"] == "response"
 
         response = client.post(
             COMPLETION_PATH,
@@ -92,7 +100,7 @@ def test_all_provider_model_combination(model, provider):
             json={"messages": [{"role": "user", "content": "Hello"}]},
         )
         assert response.status_code == 200
-        assert response.json() == {"completion": "response"}
+        assert response.json()["completion"] == "response"
 
         for model in provider_and_models.all_working_providers_map[
             provider
@@ -103,4 +111,4 @@ def test_all_provider_model_combination(model, provider):
                 json={"messages": [{"role": "user", "content": "Hello"}]},
             )
             assert response.status_code == 200
-            assert response.json() == {"completion": "response"}
+            assert response.json()["completion"] == "response"

@@ -210,12 +210,17 @@ def chat_completion() -> type[g4f.ChatCompletion]:
 
 class CompletionResponse(BaseModel):
     completion: str = Field(..., description="Completion of the messages")
+    provider: str | None = Field(None, description="Provider used for completion")
+    model: str | None = Field(None, description="Model used for completion")
 
 
-class UiCompletionRequest(BaseModel):
+class UiShortCompletionRequest(BaseModel):
     message: str = Field(..., description="Current message from text input")
-    model: str = Field(..., description="Model to use for completion")
-    provider: str = Field(..., description="Provider to use for completion")
     history: list[Message] = Field(
         default_factory=list, description="History of past messages"
     )
+
+
+class UiCompletionRequest(UiShortCompletionRequest):
+    model: str = Field(..., description="Model to use for completion")
+    provider: str = Field(..., description="Provider to use for completion")

@@ -27,7 +27,9 @@ base_working_providers_map = {
 @dataclass
 class ProviderAndModels:
     all_working_provider_names: list[str] = field(default_factory=list)
-    all_working_providers_map: dict[str, CompletionProvider] = field(default_factory=dict)
+    all_working_providers_map: dict[str, CompletionProvider] = field(
+        default_factory=dict
+    )
     all_model_names: list[str] = field(default_factory=list)
     all_models_map: dict[str, CompletionModel] = field(default_factory=dict)
 

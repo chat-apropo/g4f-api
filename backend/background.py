@@ -39,7 +39,9 @@ async def test_provider(
                 model = provider.default_model
             elif provider.__name__ in provider_and_models.all_working_providers_map:
                 model = list(
-                    provider_and_models.all_working_providers_map[provider.__name__].supported_models
+                    provider_and_models.all_working_providers_map[
+                        provider.__name__
+                    ].supported_models
                 )[0]
             else:
                 model = "gpt-4"

@@ -8,11 +8,8 @@ from backend.dependencies import (
     CompletionResponse,
     Message,
     UiCompletionRequest,
-    all_model_names,
-    all_models_map,
-    all_working_provider_names,
-    all_working_providers_map,
     chat_completion,
+    provider_and_models,
 )
 from backend.models import CompletionRequest
 from backend.settings import TEMPLATES_PATH
@@ -26,6 +23,18 @@ def add_routers(app: FastAPI) -> None:
     app.include_router(router_root)
     app.include_router(router_api)
     app.include_router(router_ui)
+
+
+BEST_MODELS_ORDERED = [
+    "gpt-4",
+    "gpt-3.5-turbo",
+    "gpt-3.5",
+]
+BEST_MODELS_ORDERED += [
+    model_name
+    for model_name in provider_and_models.all_model_names
+    if model_name not in BEST_MODELS_ORDERED
+]
 
 
 @router_root.get("/")
@@ -52,12 +61,12 @@ def post_completion(
 
 @router_api.get("/providers")
 def get_list_providers():
-    return all_working_providers_map
+    return provider_and_models.all_working_providers_map
 
 
 @router_api.get("/models")
 def get_list_models():
-    return all_models_map
+    return provider_and_models.all_models_map
 
 
 @router_api.get("/health")
@@ -76,8 +85,8 @@ def get_ui(request: Request) -> HTMLResponse:
         name="index.html",
         request=request,
         context={
-            "all_models": all_model_names,
-            "all_providers": [""] + all_working_provider_names,
+            "all_models": provider_and_models.all_model_names,
+            "all_providers": [""] + provider_and_models.all_working_provider_names,
             "default_model": "gpt-4",
         },
     )

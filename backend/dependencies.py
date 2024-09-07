@@ -4,18 +4,19 @@ import g4f
 from fastapi import Query
 from fastapi.openapi.models import Example
 from g4f.models import ModelUtils
-from g4f.Provider import RetryProvider
+from g4f.Provider import BaseProvider, RetryProvider
 from g4f.Provider.base_provider import ProviderModelMixin
 from pydantic import BaseModel, Field
 
 from backend.models import CompletionModel, CompletionProvider, Message
 
-g4f_working_providers_map = {
+working_providers_map = {
     provider.__name__: provider
     for provider in g4f.Provider.__providers__
-    if provider.working
+    if provider.working and not provider.needs_auth
 }
-all_working_provider_names: list[str] = list(g4f_working_providers_map.keys())
+
+all_working_provider_names: list[str] = list(working_providers_map.keys())
 all_working_providers_map: dict[str, CompletionProvider] = {}
 
 all_model_names = list(ModelUtils.convert.keys())
@@ -38,15 +39,44 @@ for model_name in all_model_names:
 
     # Populate providers with recomended models
     for provider_name in best_providers:
+        if provider_name not in working_providers_map:
+            continue
+
         if provider_name not in all_working_providers_map:
             all_working_providers_map[provider_name] = CompletionProvider(
                 name=provider_name,
                 supported_models=set(),
-                url=g4f_working_providers_map[provider_name].url
-                if provider_name in g4f_working_providers_map
-                else "",
+                url=working_providers_map[provider_name].url or "",
             )
         all_working_providers_map[provider_name].supported_models.add(model.name)
+
+# Populate with models declared in the provider class definitions themselves
+for provider_name in working_providers_map:
+    if provider_name not in working_providers_map:
+        continue
+    provider: BaseProvider = working_providers_map[provider_name]
+    if provider_name not in all_working_providers_map:
+        all_working_providers_map[provider_name] = CompletionProvider(
+            name=provider_name,
+            supported_models=set(),
+            url=provider.url or "",
+        )
+    if hasattr(provider, "models"):
+        all_working_providers_map[provider_name].supported_models.update(
+            set(provider.models or [])
+        )
+
+    if hasattr(provider, "default_model"):
+        all_working_providers_map[provider_name].supported_models.update(
+            [provider.default_model] if provider.default_model else []
+        )
+
+    if hasattr(provider, "supports_gpt_4") and provider.supports_gpt_4:
+        all_working_providers_map[provider_name].supported_models.add("gpt-4")
+
+    if hasattr(provider, "supports_gpt_35_turbo") and provider.supports_gpt_35_turbo:
+        all_working_providers_map[provider_name].supported_models.add("gpt-3.5-turbo")
+
 
 # ProviderMixins also have models directly associated with them
 for provider in g4f.Provider.__providers__:
@@ -59,6 +89,7 @@ for provider in g4f.Provider.__providers__:
         all_working_providers_map[provider.__name__].supported_models.update(
             provider.models
         )
+
 
 A = TypeVar("A")
 
@@ -99,11 +130,15 @@ class CompletionParams:
         allowed_values_or_none(model, all_model_names)
         allowed_values_or_none(provider, all_working_provider_names)
         if model and provider:
-            if (
-                provider not in all_working_providers_map
-                or model not in all_working_providers_map[provider].supported_models
-            ):
-                raise ValueError(f"Model {model} not supported by provider {provider}")
+            if provider not in all_working_providers_map:
+                raise ValueError(
+                    f"Provider {provider} not in working providers. Check available providers with /api/providers"
+                )
+            provider_model = all_working_providers_map[provider]
+            if model not in provider_model.supported_models:
+                raise ValueError(
+                    f"Model {model} not supported by provider {provider}. Check available providers and their supported models with /api/providers"
+                )
 
         self.provider = provider
         self.model = model

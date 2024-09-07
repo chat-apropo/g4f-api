@@ -7,6 +7,7 @@ from backend import app
 from backend.dependencies import (
     all_model_names,
     all_working_provider_names,
+    all_working_providers_map,
     chat_completion,
 )
 
@@ -42,14 +43,18 @@ def test_api_validation():
         response = client.post(
             COMPLETION_PATH,
             params={
-                "model": all_model_names[0],
+                "model": list(
+                    all_working_providers_map[
+                        all_working_provider_names[0]
+                    ].supported_models
+                )[0],
                 "provider": all_working_provider_names[0],
             },
             json={
                 "messages": [{"role": "user", "content": "Hello"}],
             },
         )
-        assert response.status_code == 422
+        assert response.status_code == 200
 
         # Both model and provider missing
         response = client.post(
@@ -90,3 +95,12 @@ def test_all_provider_model_combination(model, provider):
         )
         assert response.status_code == 200
         assert response.json() == {"completion": "response"}
+
+        for model in all_working_providers_map[provider].supported_models:
+            response = client.post(
+                COMPLETION_PATH,
+                params={"provider": provider, "model": model},
+                json={"messages": [{"role": "user", "content": "Hello"}]},
+            )
+            assert response.status_code == 200
+            assert response.json() == {"completion": "response"}

@@ -77,19 +77,36 @@ for provider_name in working_providers_map:
     if hasattr(provider, "supports_gpt_35_turbo") and provider.supports_gpt_35_turbo:
         all_working_providers_map[provider_name].supported_models.add("gpt-3.5-turbo")
 
+    for model_name in all_working_providers_map[provider_name].supported_models:
+        if model_name not in all_models_map:
+            all_models_map[model_name] = CompletionModel(
+                name=model_name, supported_provider_names={provider_name}
+            )
+        else:
+            all_models_map[model_name].supported_provider_names.add(provider_name)
+
 
 # ProviderMixins also have models directly associated with them
 for provider in g4f.Provider.__providers__:
     if not provider.working:
         continue
+    provider_name = provider.__name__
     if (
         isinstance(provider, ProviderModelMixin)
-        and provider.__name__ in all_working_providers_map
+        and provider_name in all_working_providers_map
     ):
-        all_working_providers_map[provider.__name__].supported_models.update(
+        all_working_providers_map[provider_name].supported_models.update(
             provider.models
         )
+        for model_name in all_working_providers_map[provider_name].supported_models:
+            if model_name not in all_models_map:
+                all_models_map[model_name] = CompletionModel(
+                    name=model_name, supported_provider_names={provider_name}
+                )
+            else:
+                all_models_map[model_name].supported_provider_names.add(provider_name)
 
+all_model_names = list(all_models_map.keys())
 
 A = TypeVar("A")
 

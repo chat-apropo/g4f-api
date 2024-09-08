@@ -30,3 +30,10 @@ textarea.onkeydown = function (e) {
     document.getElementById("btnSubmit").click();
   }
 };
+
+const nofailCheckbox = document.getElementById('nofail');
+nofailCheckbox.addEventListener('change', function () {
+  console.log("nofail changed");
+  document.getElementById("model").disabled = nofailCheckbox.checked;
+  document.getElementById("provider").disabled = nofailCheckbox.checked;
+});

@@ -5,10 +5,8 @@ from fastapi.testclient import TestClient
 
 from backend import app
 from backend.dependencies import (
-    all_model_names,
-    all_working_provider_names,
-    all_working_providers_map,
     chat_completion,
+    provider_and_models,
 )
 
 COMPLETION_PATH = "/api/completions"
@@ -39,45 +37,60 @@ def test_api_validation():
         )
         assert response.status_code == 422
 
+        model = list(
+            provider_and_models.all_working_providers_map[
+                provider_and_models.all_working_provider_names[0]
+            ].supported_models
+        )[0]
+        provider = provider_and_models.all_working_provider_names[0]
+
         # Valid model and provider given together
         response = client.post(
             COMPLETION_PATH,
             params={
-                "model": list(
-                    all_working_providers_map[
-                        all_working_provider_names[0]
-                    ].supported_models
-                )[0],
-                "provider": all_working_provider_names[0],
+                "model": model,
+                "provider": provider,
             },
             json={
                 "messages": [{"role": "user", "content": "Hello"}],
             },
         )
         assert response.status_code == 200
+        assert response.json() == {
+            "completion": "response",
+            "model": model,
+            "provider": provider,
+        }
 
         # Both model and provider missing
         response = client.post(
             COMPLETION_PATH, json={"messages": [{"role": "user", "content": "Hello"}]}
         )
-        assert response.status_code == 422
+        assert response.status_code == 200
+        assert response.json()["model"]
+        assert response.json()["provider"]
 
         # Valid request
         response = client.post(
             COMPLETION_PATH,
-            params={"model": all_model_names[0]},
+            params={"model": provider_and_models.all_model_names[0]},
             json={"messages": [{"role": "user", "content": "Hello"}]},
         )
         assert response.status_code == 200
-        assert response.json() == {"completion": "response"}
+        assert response.json()["completion"] == "response"
 
 
-@pytest.mark.parametrize("model", all_model_names)
-@pytest.mark.parametrize("provider", all_working_provider_names)
+@pytest.mark.parametrize("model", provider_and_models.all_model_names)
+@pytest.mark.parametrize("provider", provider_and_models.all_working_provider_names)
 def test_all_provider_model_combination(model, provider):
     chat = Mock()
     chat.create.return_value = "response"
     app.dependency_overrides[chat_completion] = lambda: chat
+
+    model_supported = (
+        model
+        in provider_and_models.all_working_providers_map[provider].supported_models
+    )
 
     with TestClient(app) as client:
         response = client.post(
@@ -86,7 +99,7 @@ def test_all_provider_model_combination(model, provider):
             json={"messages": [{"role": "user", "content": "Hello"}]},
         )
         assert response.status_code == 200
-        assert response.json() == {"completion": "response"}
+        assert response.json()["completion"] == "response"
 
         response = client.post(
             COMPLETION_PATH,
@@ -94,13 +107,15 @@ def test_all_provider_model_combination(model, provider):
             json={"messages": [{"role": "user", "content": "Hello"}]},
         )
         assert response.status_code == 200
-        assert response.json() == {"completion": "response"}
+        assert response.json()["completion"] == "response"
 
-        for model in all_working_providers_map[provider].supported_models:
-            response = client.post(
-                COMPLETION_PATH,
-                params={"provider": provider, "model": model},
-                json={"messages": [{"role": "user", "content": "Hello"}]},
-            )
+        response = client.post(
+            COMPLETION_PATH,
+            params={"provider": provider, "model": model},
+            json={"messages": [{"role": "user", "content": "Hello"}]},
+        )
+        if model_supported:
             assert response.status_code == 200
-            assert response.json() == {"completion": "response"}
+            assert response.json()["completion"] == "response"
+        else:
+            assert response.status_code == 422

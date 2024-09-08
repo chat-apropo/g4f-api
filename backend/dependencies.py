@@ -11,9 +11,7 @@ from pydantic import BaseModel, Field
 
 from backend.models import CompletionModel, CompletionProvider, Message
 
-provider_blacklist = {
-    "AItianhuSpace",
-}
+provider_blacklist = {"AItianhuSpace", "Ollama", "Local", "Aura"}
 
 base_working_providers_map = {
     provider.__name__: provider
@@ -169,14 +167,14 @@ class CompletionParams:
         self,
         model: str | None = Query(
             None,
-            description="LLM model to use for completion. Cannot be specified together with provider.",
+            description="LLM model to use for completion. If not specified, the best available model will be used.",
             openapi_examples=generate_examples_from_values(
                 [None] + provider_and_models.all_model_names
             ),
         ),
         provider: str | None = Query(
             None,
-            description="Provider to use for completion. Cannot be specified together with model.",
+            description="Provider to use for completion. If not specified, the best available provider will be used.",
             openapi_examples=generate_examples_from_values(
                 [None] + provider_and_models.all_working_provider_names
             ),
@@ -185,7 +183,9 @@ class CompletionParams:
         provider = provider or None
         model = model or None
         if not (model or provider):
-            raise ValueError("one of model or provider must be specified at least")
+            self.provider = None
+            self.model = None
+            return
 
         allowed_values_or_none(model, provider_and_models.all_model_names)
         allowed_values_or_none(provider, provider_and_models.all_working_provider_names)
@@ -214,13 +214,16 @@ class CompletionResponse(BaseModel):
     model: str | None = Field(None, description="Model used for completion")
 
 
-class UiShortCompletionRequest(BaseModel):
+class UiCompletionRequest(BaseModel):
+    model: str | None = Field(
+        None,
+        description="Model to use for completion. If not specified, the best available model will be used.",
+    )
+    provider: str | None = Field(
+        None,
+        description="Provider to use for completion. If not specified, the best available provider will be used.",
+    )
     message: str = Field(..., description="Current message from text input")
     history: list[Message] = Field(
         default_factory=list, description="History of past messages"
     )
-
-
-class UiCompletionRequest(UiShortCompletionRequest):
-    model: str = Field(..., description="Model to use for completion")
-    provider: str = Field(..., description="Provider to use for completion")

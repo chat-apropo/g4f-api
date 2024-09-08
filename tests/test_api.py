@@ -66,7 +66,9 @@ def test_api_validation():
         response = client.post(
             COMPLETION_PATH, json={"messages": [{"role": "user", "content": "Hello"}]}
         )
-        assert response.status_code == 422
+        assert response.status_code == 200
+        assert response.json()["model"]
+        assert response.json()["provider"]
 
         # Valid request
         response = client.post(
@@ -85,6 +87,11 @@ def test_all_provider_model_combination(model, provider):
     chat.create.return_value = "response"
     app.dependency_overrides[chat_completion] = lambda: chat
 
+    model_supported = (
+        model
+        in provider_and_models.all_working_providers_map[provider].supported_models
+    )
+
     with TestClient(app) as client:
         response = client.post(
             COMPLETION_PATH,
@@ -102,13 +109,13 @@ def test_all_provider_model_combination(model, provider):
         assert response.status_code == 200
         assert response.json()["completion"] == "response"
 
-        for model in provider_and_models.all_working_providers_map[
-            provider
-        ].supported_models:
-            response = client.post(
-                COMPLETION_PATH,
-                params={"provider": provider, "model": model},
-                json={"messages": [{"role": "user", "content": "Hello"}]},
-            )
+        response = client.post(
+            COMPLETION_PATH,
+            params={"provider": provider, "model": model},
+            json={"messages": [{"role": "user", "content": "Hello"}]},
+        )
+        if model_supported:
             assert response.status_code == 200
             assert response.json()["completion"] == "response"
+        else:
+            assert response.status_code == 422

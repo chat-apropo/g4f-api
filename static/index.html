@@ -48,7 +48,7 @@
             hx-on::before-request="addMessage('user', this.input.value); this.input.value = ''; this.input.disabled = true; this.btnSubmit.disabled = true;"
             hx-on::after-request="this.input.disabled = false; this.btnSubmit.disabled = false; this.input.focus();"
             hx-include="#messages"
-            hx-vals='js:{ "message": this.input.value, "model": this.model.value, "provider": this.provider.value, "history": getHistory() }'
+            hx-vals='js:{ "message": this.input.value, "model": this.nofail.checked ? null : this.model.value, "provider": this.nofail.checked ? null : this.provider.value, "history": getHistory() }'
             hx-indicator="#loading">
 
             <div class="container">
@@ -60,18 +60,14 @@
                 <button type="submit" id="btnSubmit" class="btn btn-primary col-2">Send</button>
 
                 <div class="dropdowns col align-self-end">
-                  <div class="row justify-content-end">
-                    <div class="col-md-4 col-md-offset-2">
-                      <checkbox id="history" class="form-check">
-                        <label for="history" class="form-label">History:</label>
-                        <input type="checkbox" id="history" name="history" class="form-check-input" checked>
-                      </checkbox>
-                    </div>
+                  <div class="row justify-content-start">
+                    <div class="col-md-4 col-md-offset-2"></div>
+                    <input type="checkbox" id="nofail" checked>
                   </div>
                   <div class="row justify-content-end">
                     <div class="col-md-4 col-md-offset-2"></div>
                     <label for="model" class="form-label text-right col align-self-end ">Model:</label>
-                    <select name="model" id="model" class="col align-self-end form-select">
+                    <select name="model" id="model" class="col align-self-end form-select" disabled>
                       {% for model in all_models %}
                       <option value="{{ model }}" {{ "selected" if model==default_model else "" }}>{{ model }}</option>
                       {% endfor %}
@@ -80,7 +76,7 @@
                   <div class="row justify-content-end">
                     <div class="col-md-4 col-md-offset-2"></div>
                     <label for="provider" class="form-label col align-self-end ">Provider:</label>
-                    <select name="provider" id="provider" class="col align-self-end form-select">
+                    <select name="provider" id="provider" class="col align-self-end form-select" disabled>
                       {% for provider in all_providers %}
                       <option value="{{ provider }}">{{ provider }}</option>
                       {% endfor %}

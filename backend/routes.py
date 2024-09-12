@@ -102,10 +102,10 @@ def post_completion(
     if params.model is None:
         if params.provider is None:
             model_name, provider_name = get_nofail_params()
+            nofail = True
         else:
             provider_name = params.provider
             model_name = get_best_model_for_provider(provider_name)
-            nofail = True
     else:
         model_name = params.model
         provider_name = params.provider

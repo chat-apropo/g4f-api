@@ -30,7 +30,6 @@ def add_routers(app: FastAPI) -> None:
 BEST_MODELS_ORDERED = [
     "gpt-4",
     "gpt-3.5-turbo",
-    "gpt-3.5",
 ]
 BEST_MODELS_ORDERED += [
     model_name

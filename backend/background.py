@@ -32,7 +32,7 @@ async def test_provider(
     print(f"Testing provider {provider.__name__}")
     async with semaphore:
         try:
-            messages = [{"role": "user", "content": "hi"}]
+            messages = [{"role": "user", "content": "hi, how are you?"}]
             if hasattr(provider, "supported_models"):
                 model = list(provider.supported_models)[0]
             elif hasattr(provider, "default_model"):
@@ -47,7 +47,7 @@ async def test_provider(
                 model = "gpt-4"
             async with asyncio.timeout(5):
                 text = await ai_respond(messages, model, provider=provider)
-            result = bool(text) and isinstance(text, str)
+            result = len(text.strip()) > 0 and isinstance(text, str)
         except ValueError:
             result = False
         except asyncio.TimeoutError:

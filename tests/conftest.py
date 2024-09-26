@@ -2,9 +2,10 @@ from typing import Generator
 from unittest.mock import Mock
 
 import pytest
+from fastapi.testclient import TestClient
+
 from backend import app
 from backend.dependencies import chat_completion
-from fastapi.testclient import TestClient
 
 
 @pytest.fixture(scope="function")

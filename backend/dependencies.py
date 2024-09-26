@@ -9,9 +9,23 @@ from g4f.Provider import BaseProvider, RetryProvider
 from g4f.Provider.base_provider import ProviderModelMixin
 from pydantic import BaseModel, Field
 
+from backend.errors import CustomValidationError
 from backend.models import CompletionModel, CompletionProvider, Message
 
 provider_blacklist = {"AItianhuSpace", "Ollama", "Local", "Aura"}
+
+provider_models_override = {
+    "ChatGpt": [
+        "gpt-4o",
+        "gpt-4o-mini",
+        "gpt-4",
+        "gpt-4-turbo",
+        "chatgpt-4o-latest",
+        "gpt-3.5-turbo",
+    ],
+    "ChatGptEs": ["gpt-4o", "gpt-4o-mini", "chatgpt-4o-latest"],
+}
+
 
 base_working_providers_map = {
     provider.__name__: provider
@@ -143,6 +157,12 @@ class ProviderAndModels:
 
         self.all_model_names = list(self.all_models_map.keys())
 
+        for provider_name in provider_models_override:
+            if provider_name in self.all_working_providers_map:
+                self.all_working_providers_map[provider_name].supported_models = set(
+                    provider_models_override[provider_name]
+                )
+
 
 provider_and_models = ProviderAndModels()
 provider_and_models.update_model_providers(base_working_providers_map)
@@ -158,7 +178,9 @@ def allowed_values_or_none(v: A | None, allowed: list[A]) -> A | None:
     if v is None:
         return v
     if v not in allowed:
-        raise ValueError(f"Value {v} not in allowed values: {allowed}")
+        raise CustomValidationError(
+            f"Value {v} not in allowed values: {allowed}", error={}
+        )
     return v
 
 
@@ -191,13 +213,17 @@ class CompletionParams:
         allowed_values_or_none(provider, provider_and_models.all_working_provider_names)
         if model and provider:
             if provider not in provider_and_models.all_working_providers_map:
-                raise ValueError(
-                    f"Provider {provider} not in working providers. Check available providers with /api/providers"
+                raise CustomValidationError(
+                    f"Provider {provider} not in working providers. Check available providers with /api/providers",
+                    error={
+                        "allowed_providers": provider_and_models.all_working_provider_names
+                    },
                 )
             provider_model = provider_and_models.all_working_providers_map[provider]
             if model not in provider_model.supported_models:
-                raise ValueError(
-                    f"Model {model} not supported by provider {provider}. Check available providers and their supported models with /api/providers"
+                raise CustomValidationError(
+                    f"Model {model} not supported by provider {provider}. Check available providers and their supported models with /api/providers",
+                    error={"allowed_models": list(provider_model.supported_models)},
                 )
 
         self.provider = provider

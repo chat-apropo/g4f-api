@@ -13,6 +13,7 @@ from backend.dependencies import (
     chat_completion,
     provider_and_models,
 )
+from backend.errors import CustomValidationError
 from backend.models import CompletionRequest
 from backend.settings import TEMPLATES_PATH
 
@@ -28,6 +29,8 @@ def add_routers(app: FastAPI) -> None:
 
 
 BEST_MODELS_ORDERED = [
+    "gpt-4o",
+    "gpt-4o-mini",
     "gpt-4",
     "gpt-3.5-turbo",
 ]
@@ -121,7 +124,10 @@ def post_completion(
                 return CompletionResponse(
                     completion=response, model=model_name, provider=provider_name
                 )
-            raise ValueError("Unexpected response type from g4f.ChatCompletion.create")
+            raise CustomValidationError(
+                "Unexpected response type from g4f.ChatCompletion.create",
+                error={"response": response},
+            )
         except Exception as e:
             if not nofail:
                 raise e

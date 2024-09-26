@@ -28,5 +28,5 @@ jobs:
         run: python -m pytest tests/
 
       - name: Lint with Ruff
-        run: ruff --output-format=github .
+        run: ruff check --output-format=github .
         continue-on-error: true

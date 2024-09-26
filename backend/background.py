@@ -4,10 +4,8 @@ from g4f import ProviderType
 from g4f.client import AsyncClient
 from g4f.stubs import ChatCompletion
 
-from backend.dependencies import (
-    base_working_providers_map,
-    provider_and_models,
-)
+from backend.dependencies import base_working_providers_map, provider_and_models
+from backend.errors import CustomValidationError
 
 lock = asyncio.Lock()
 
@@ -20,7 +18,9 @@ async def ai_respond(messages: list[dict], model: str, provider: ProviderType) -
     )
     choices = chat_completion.choices
     if len(choices) == 0:
-        raise ValueError("No response from the provider")
+        raise CustomValidationError(
+            "No response from the provider", error={"messages": messages}
+        )
 
     return choices[0].message.content
 
@@ -32,7 +32,7 @@ async def test_provider(
     print(f"Testing provider {provider.__name__}")
     async with semaphore:
         try:
-            messages = [{"role": "user", "content": "hi"}]
+            messages = [{"role": "user", "content": "hi, how are you?"}]
             if hasattr(provider, "supported_models"):
                 model = list(provider.supported_models)[0]
             elif hasattr(provider, "default_model"):
@@ -47,7 +47,7 @@ async def test_provider(
                 model = "gpt-4"
             async with asyncio.timeout(5):
                 text = await ai_respond(messages, model, provider=provider)
-            result = bool(text) and isinstance(text, str)
+            result = len(text.strip()) > 0 and isinstance(text, str)
         except ValueError:
             result = False
         except asyncio.TimeoutError:

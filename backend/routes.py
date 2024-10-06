@@ -52,8 +52,7 @@ class NofailParms(NamedTuple):
 
 
 def get_nofail_params(offset: int = 0) -> NofailParms:
-    for i in range(10):
-        model = BEST_MODELS_ORDERED[i]
+    for model in BEST_MODELS_ORDERED:
         provider = g4f.get_model_and_provider(model, None, False)[1]
 
         # If the provider is not working, try to find another one that supports the model
@@ -69,9 +68,6 @@ def get_nofail_params(offset: int = 0) -> NofailParms:
                     ].supported_models
                 ):
                     return NofailParms(model=model, provider=provider_name)
-            else:
-                # Try the next model
-                continue
 
     raise HTTPException(
         status_code=500, detail="Failed to find a model and provider to use"

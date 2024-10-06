@@ -74,7 +74,7 @@ def get_nofail_params(offset: int = 0) -> NofailParms:
                 continue
 
     raise HTTPException(
-        status_code=500, detail="Failed to get a response from the provider"
+        status_code=500, detail="Failed to find a model and provider to use"
     )
 
 
@@ -134,7 +134,8 @@ def post_completion(
             provider_name = get_nofail_params(attempt).provider
             model_name = get_best_model_for_provider(provider_name)
     raise HTTPException(
-        status_code=500, detail="Failed to get a response from the provider"
+        status_code=500,
+        detail=f"Failed to get a response from the provider. Last tried model: {model_name} and provider: {provider_name}",
     )
 
 

@@ -112,7 +112,7 @@ def post_completion(
         model_name = params.model
         provider_name = params.provider
 
-    for attempt in range(5):
+    for attempt in range(10):
         try:
             response = chat.create(
                 model=model_name,
@@ -126,7 +126,7 @@ def post_completion(
                 )
             raise CustomValidationError(
                 "Unexpected response type from g4f.ChatCompletion.create",
-                error={"response": response},
+                error={"response": str(response)},
             )
         except Exception as e:
             if not nofail:

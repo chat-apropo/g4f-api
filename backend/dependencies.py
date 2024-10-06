@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 from backend.errors import CustomValidationError
 from backend.models import CompletionModel, CompletionProvider, Message
 
-provider_blacklist = {"AItianhuSpace", "Ollama", "Local", "Aura"}
+provider_blacklist = {"AItianhuSpace", "Ollama", "Local", "Aura", "AiChatOnline"}
 
 provider_models_override = {
     "ChatGpt": [

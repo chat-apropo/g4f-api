@@ -184,11 +184,28 @@ def get_health_check():
 @router_api.websocket("/stream")
 async def stream(
     websocket: WebSocket,
-    params: CompletionParams = Depends(),
 ) -> CompletionResponse:
     chat = AsyncClient().chat.completions.create
-    await websocket.accept()
     messages: list[Message] = []
+
+    await websocket.accept()
+    while True:
+        try:
+            data = await websocket.receive_json()
+        except ValueError:
+            await websocket.send_json({"error": "Invalid JSON data"})
+            continue
+
+        params = CompletionParams(model=None, provider=None)
+        if data:
+            try:
+                params = CompletionParams(
+                    model=data.get("model"), provider=data.get("provider")
+                )
+            except ValueError as e:
+                await websocket.send_json({"error": str(e)})
+                continue
+        break
 
     while True:
         try:

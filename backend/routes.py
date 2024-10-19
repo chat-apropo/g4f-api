@@ -7,7 +7,7 @@ import g4f
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request, WebSocket
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from g4f.client import AsyncClient
+from g4f.client import Client
 
 from backend.dependencies import (
     CompletionParams,
@@ -185,7 +185,7 @@ def get_health_check():
 async def stream(
     websocket: WebSocket,
 ) -> CompletionResponse:
-    chat = AsyncClient().chat.completions.create
+    chat = Client().chat.completions.async_create
     messages: list[Message] = []
 
     await websocket.accept()

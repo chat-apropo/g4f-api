@@ -1,7 +1,7 @@
 import asyncio
 
 from g4f import ProviderType
-from g4f.client import AsyncClient
+from g4f.client import Client
 from g4f.stubs import ChatCompletion
 
 from backend.dependencies import base_working_providers_map, provider_and_models
@@ -12,8 +12,8 @@ lock = asyncio.Lock()
 
 async def ai_respond(messages: list[dict], model: str, provider: ProviderType) -> str:
     """Generate a response from the AI."""
-    client = AsyncClient()
-    chat_completion: ChatCompletion = await client.chat.completions.create(
+    client = Client()
+    chat_completion: ChatCompletion = await client.chat.completions.async_create(
         messages=messages, model=model, provider=provider, stream=False
     )
     choices = chat_completion.choices

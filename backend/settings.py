@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     PORT: int = 8000
     RELOAD: bool = False
     CHECK_WORKING_PROVIDERS: bool = True
+    DEBUG: bool = False
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

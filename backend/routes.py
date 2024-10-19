@@ -1,9 +1,13 @@
-from typing import NamedTuple
+import logging
+from collections.abc import Iterator
+from inspect import isawaitable
+from typing import Callable, NamedTuple
 
 import g4f
-from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request, WebSocket
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from g4f.client import Client
 
 from backend.dependencies import (
     CompletionParams,
@@ -39,6 +43,7 @@ BEST_MODELS_ORDERED += [
     for model_name in provider_and_models.all_model_names
     if model_name not in BEST_MODELS_ORDERED
 ]
+NUM_ATTEMPTS = 15
 
 
 @router_root.get("/")
@@ -90,16 +95,23 @@ def get_best_model_for_provider(provider_name: str) -> str:
     return models[0]
 
 
-@router_api.post("/completions")
-def post_completion(
+class Completion(NamedTuple):
+    result: g4f.CreateResult | str | Iterator
+    model: str
+    provider: str | None
+
+
+def create_completion(
     completion: CompletionRequest,
-    params: CompletionParams = Depends(),
-    chat: type[g4f.ChatCompletion] = Depends(chat_completion),
-) -> CompletionResponse:
+    params: CompletionParams,
+    chat_callable: Callable,
+    stream: bool = False,
+    offset: int = 0,
+) -> Completion:
     nofail = False
     if params.model is None:
         if params.provider is None:
-            model_name, provider_name = get_nofail_params()
+            model_name, provider_name = get_nofail_params(offset)
             nofail = True
         else:
             provider_name = params.provider
@@ -108,30 +120,49 @@ def post_completion(
         model_name = params.model
         provider_name = params.provider
 
-    for attempt in range(10):
-        try:
-            response = chat.create(
-                model=model_name,
-                provider=provider_name,
-                messages=[msg.model_dump() for msg in completion.messages],
-                stream=False,
-            )
-            if isinstance(response, str):
-                return CompletionResponse(
-                    completion=response, model=model_name, provider=provider_name
+    for attempt in range(offset + 1, NUM_ATTEMPTS):
+        if attempt >= offset:
+            try:
+                logging.debug(f"Trying model {model_name} and provider {provider_name}")
+                result = chat_callable(
+                    model=model_name,
+                    provider=provider_name,
+                    messages=[msg.model_dump() for msg in completion.messages],
+                    stream=stream,
                 )
-            raise CustomValidationError(
-                "Unexpected response type from g4f.ChatCompletion.create",
-                error={"response": str(response)},
-            )
-        except Exception as e:
-            if not nofail:
-                raise e
+                return Completion(
+                    result=result, model=model_name, provider=provider_name
+                )
+            except Exception as e:
+                logging.exception(e)
+                if not nofail:
+                    raise e
             provider_name = get_nofail_params(attempt).provider
             model_name = get_best_model_for_provider(provider_name)
     raise HTTPException(
         status_code=500,
         detail=f"Failed to get a response from the provider. Last tried model: {model_name} and provider: {provider_name}",
+    )
+
+
+@router_api.post("/completions")
+def post_completion(
+    completion_request: CompletionRequest,
+    params: CompletionParams = Depends(),
+    chat: type[g4f.ChatCompletion] = Depends(chat_completion),
+) -> CompletionResponse:
+    completion = create_completion(
+        completion_request, params, chat.create, stream=False
+    )
+    if isinstance(completion.result, str):
+        return CompletionResponse(
+            completion=completion.result,
+            model=completion.model,
+            provider=completion.provider,
+        )
+    raise CustomValidationError(
+        "Unexpected response type from g4f.ChatCompletion.create",
+        error={"response": str(completion)},
     )
 
 
@@ -148,6 +179,74 @@ def get_list_models():
 @router_api.get("/health")
 def get_health_check():
     return {"status": "ok"}
+
+
+@router_api.websocket("/stream")
+async def stream(
+    websocket: WebSocket,
+) -> CompletionResponse:
+    chat = Client().chat.completions.async_create
+    messages: list[Message] = []
+
+    await websocket.accept()
+    while True:
+        try:
+            data = await websocket.receive_json()
+        except ValueError:
+            await websocket.send_json({"error": "Invalid JSON data"})
+            continue
+
+        params = CompletionParams(model=None, provider=None)
+        if data:
+            try:
+                params = CompletionParams(
+                    model=data.get("model"), provider=data.get("provider")
+                )
+            except ValueError as e:
+                await websocket.send_json({"error": str(e)})
+                continue
+        break
+
+    while True:
+        try:
+            data = await websocket.receive_json()
+        except ValueError:
+            await websocket.send_json({"error": "Invalid JSON data"})
+            continue
+
+        try:
+            completion_request = CompletionRequest.model_validate(data)
+        except Exception as e:
+            await websocket.send_json({"error": str(e)})
+            continue
+
+        completion_request.messages = messages + completion_request.messages
+        for attempt in range(NUM_ATTEMPTS):
+            try:
+                completion = create_completion(
+                    completion_request, params, chat, stream=True, offset=attempt
+                )
+
+                if isawaitable(completion.result):
+                    stream = await completion.result
+                else:
+                    stream = completion.result
+
+                txt = ""
+                async for chunk in stream:
+                    part = chunk.choices[0].delta.content or ""
+                    await websocket.send_json({"part": part})
+                    txt += part
+
+                messages = completion_request.messages + [
+                    Message(role="assistant", content=txt)
+                ]
+                break
+
+            except Exception as e:
+                logging.exception(e)
+                if attempt == NUM_ATTEMPTS - 1:
+                    await websocket.send_json({"error": str(e), "attempts": attempt})
 
 
 ### UI routes

@@ -77,7 +77,7 @@ def test_api_validation():
         assert response.json()["completion"] == "response"
 
 
-@pytest.mark.parametrize("model", provider_and_models.all_model_names)
+@pytest.mark.parametrize("model", sorted(provider_and_models.all_model_names))
 def test_all_models(client: TestClient, model: str) -> None:
     response = client.post(
         COMPLETION_PATH,
@@ -88,7 +88,9 @@ def test_all_models(client: TestClient, model: str) -> None:
     assert response.json()["completion"] == "response"
 
 
-@pytest.mark.parametrize("provider", provider_and_models.all_working_provider_names)
+@pytest.mark.parametrize(
+    "provider", sorted(provider_and_models.all_working_provider_names)
+)
 def test_all_providers(client: TestClient, provider: str) -> None:
     response = client.post(
         COMPLETION_PATH,
@@ -99,8 +101,10 @@ def test_all_providers(client: TestClient, provider: str) -> None:
     assert response.json()["completion"] == "response"
 
 
-@pytest.mark.parametrize("model", provider_and_models.all_model_names)
-@pytest.mark.parametrize("provider", provider_and_models.all_working_provider_names)
+@pytest.mark.parametrize("model", sorted(provider_and_models.all_model_names))
+@pytest.mark.parametrize(
+    "provider", sorted(provider_and_models.all_working_provider_names)
+)
 def test_all_provider_model_combination(
     client: TestClient, model: str, provider: str
 ) -> None:

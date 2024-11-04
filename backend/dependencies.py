@@ -18,6 +18,7 @@ provider_blacklist = {
     "Local",
     "Aura",
     "AiChatOnline",
+    "Allyfy",
 }
 
 provider_models_override = {

@@ -25,7 +25,7 @@ jobs:
         run: pip install -r requirements-dev.txt
 
       - name: Run tests
-        run: python -m pytest tests/
+        run: python -m pytest -n 10 tests/
 
       # Run pre commit checks
       - uses: pre-commit/action@v3.0.0

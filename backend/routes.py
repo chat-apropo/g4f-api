@@ -29,6 +29,11 @@ def add_routers(app: FastAPI) -> None:
     app.include_router(router_ui)
 
 
+MODEL_BLACKLIST = [
+    "TextGenerations",
+    "ImageGenerations",
+]
+
 BEST_MODELS_ORDERED = [
     # "gpt-4o",
     # "gpt-4o-mini",
@@ -38,7 +43,7 @@ BEST_MODELS_ORDERED = [
 BEST_MODELS_ORDERED += [
     model_name
     for model_name in provider_and_models.all_model_names
-    if model_name not in BEST_MODELS_ORDERED
+    if model_name not in BEST_MODELS_ORDERED and model_name not in MODEL_BLACKLIST
 ]
 
 

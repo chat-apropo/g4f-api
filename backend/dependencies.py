@@ -19,6 +19,7 @@ provider_blacklist = {
     "Aura",
     "AiChatOnline",
     "Allyfy",
+    "AIUncensored",
 }
 
 provider_models_override = {

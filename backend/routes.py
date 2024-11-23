@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
+from backend.adapters import adapt_response
 from backend.dependencies import (
     CompletionParams,
     CompletionResponse,
@@ -118,7 +119,9 @@ def post_completion(
             )
             if isinstance(response, str):
                 return CompletionResponse(
-                    completion=response, model=model_name, provider=provider_name
+                    completion=adapt_response(model_name, response),
+                    model=model_name,
+                    provider=provider_name,
                 )
             raise CustomValidationError(
                 "Unexpected response type from g4f.ChatCompletion.create",

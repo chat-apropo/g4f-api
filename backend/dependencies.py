@@ -12,7 +12,18 @@ from pydantic import BaseModel, Field
 from backend.errors import CustomValidationError
 from backend.models import CompletionModel, CompletionProvider, Message
 
-provider_blacklist = {
+MODEL_BLACKLIST = [
+    "TextGenerations",
+    "ImageGenerations",
+]
+
+BEST_MODELS_ORDERED = [
+    # "gpt-4o",
+    # "gpt-4o-mini",
+    "gpt-4",
+    "gpt-3.5-turbo",
+]
+PROVIDER_BLACKLIST = {
     "AItianhuSpace",
     "Ollama",
     "Local",
@@ -20,6 +31,7 @@ provider_blacklist = {
     "AiChatOnline",
     "Allyfy",
     "AIUncensored",
+    "AmigoChat",
 }
 
 provider_models_override = {
@@ -40,7 +52,7 @@ base_working_providers_map = {
     for provider in g4f.Provider.__providers__
     if provider.working
     and not provider.needs_auth
-    and provider.__name__ not in provider_blacklist
+    and provider.__name__ not in PROVIDER_BLACKLIST
 }
 
 
@@ -174,6 +186,12 @@ class ProviderAndModels:
 
 provider_and_models = ProviderAndModels()
 provider_and_models.update_model_providers(base_working_providers_map)
+
+BEST_MODELS_ORDERED += [
+    model_name
+    for model_name in provider_and_models.all_model_names
+    if model_name not in BEST_MODELS_ORDERED and model_name not in MODEL_BLACKLIST
+]
 
 A = TypeVar("A")
 

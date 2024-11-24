@@ -8,6 +8,7 @@ from fastapi.templating import Jinja2Templates
 
 from backend.adapters import adapt_response
 from backend.dependencies import (
+    BEST_MODELS_ORDERED,
     CompletionParams,
     CompletionResponse,
     Message,
@@ -28,24 +29,6 @@ def add_routers(app: FastAPI) -> None:
     app.include_router(router_root)
     app.include_router(router_api)
     app.include_router(router_ui)
-
-
-MODEL_BLACKLIST = [
-    "TextGenerations",
-    "ImageGenerations",
-]
-
-BEST_MODELS_ORDERED = [
-    # "gpt-4o",
-    # "gpt-4o-mini",
-    "gpt-4",
-    "gpt-3.5-turbo",
-]
-BEST_MODELS_ORDERED += [
-    model_name
-    for model_name in provider_and_models.all_model_names
-    if model_name not in BEST_MODELS_ORDERED and model_name not in MODEL_BLACKLIST
-]
 
 
 @router_root.get("/")
@@ -72,16 +55,25 @@ def get_nofail_params(offset: int = 0) -> NofailParms:
                 offset -= 1
                 continue
             for provider_name in provider_and_models.all_working_provider_names:
-                if model in provider_and_models.all_working_providers_map[provider_name].supported_models:
+                if (
+                    model
+                    in provider_and_models.all_working_providers_map[
+                        provider_name
+                    ].supported_models
+                ):
                     return NofailParms(model=model, provider=provider_name)
 
-    raise HTTPException(status_code=500, detail="Failed to find a model and provider to use")
+    raise HTTPException(
+        status_code=500, detail="Failed to find a model and provider to use"
+    )
 
 
 def get_best_model_for_provider(provider_name: str) -> str:
     provider = provider_and_models.all_working_providers_map.get(provider_name)
     if provider is None:
-        raise HTTPException(status_code=422, detail=f"Provider not found: {provider_name}")
+        raise HTTPException(
+            status_code=422, detail=f"Provider not found: {provider_name}"
+        )
     models = list(provider.supported_models)
     if not models:
         raise HTTPException(

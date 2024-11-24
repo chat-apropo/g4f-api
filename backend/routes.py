@@ -1,3 +1,4 @@
+import logging
 from typing import NamedTuple
 
 import g4f
@@ -59,7 +60,11 @@ class NofailParms(NamedTuple):
 
 def get_nofail_params(offset: int = 0) -> NofailParms:
     for model in BEST_MODELS_ORDERED:
-        provider = g4f.get_model_and_provider(model, None, False)[1]
+        try:
+            provider = g4f.get_model_and_provider(model, None, False)[1]
+        except g4f.errors.ModelNotFoundError:
+            logging.warning(f"Model not found: {model}")
+            continue
 
         # If the provider is not working, try to find another one that supports the model
         if provider.__name__ not in provider_and_models.all_working_provider_names:
@@ -67,25 +72,16 @@ def get_nofail_params(offset: int = 0) -> NofailParms:
                 offset -= 1
                 continue
             for provider_name in provider_and_models.all_working_provider_names:
-                if (
-                    model
-                    in provider_and_models.all_working_providers_map[
-                        provider_name
-                    ].supported_models
-                ):
+                if model in provider_and_models.all_working_providers_map[provider_name].supported_models:
                     return NofailParms(model=model, provider=provider_name)
 
-    raise HTTPException(
-        status_code=500, detail="Failed to find a model and provider to use"
-    )
+    raise HTTPException(status_code=500, detail="Failed to find a model and provider to use")
 
 
 def get_best_model_for_provider(provider_name: str) -> str:
     provider = provider_and_models.all_working_providers_map.get(provider_name)
     if provider is None:
-        raise HTTPException(
-            status_code=422, detail=f"Provider not found: {provider_name}"
-        )
+        raise HTTPException(status_code=422, detail=f"Provider not found: {provider_name}")
     models = list(provider.supported_models)
     if not models:
         raise HTTPException(
@@ -115,6 +111,7 @@ def post_completion(
         provider_name = params.provider
 
     for attempt in range(10):
+        print(f"Trying model: {model_name} and provider: {provider_name}")
         try:
             response = chat.create(
                 model=model_name,
@@ -123,6 +120,10 @@ def post_completion(
                 stream=False,
             )
             if isinstance(response, str):
+                if response.strip() == "" and nofail:
+                    model_name, provider_name = get_nofail_params(attempt)
+                    model_name = get_best_model_for_provider(provider_name)
+                    continue
                 return CompletionResponse(
                     completion=adapt_response(model_name, response),
                     model=model_name,

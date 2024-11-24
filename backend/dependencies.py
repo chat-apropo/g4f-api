@@ -32,6 +32,7 @@ PROVIDER_BLACKLIST = {
     "Allyfy",
     "AIUncensored",
     "AmigoChat",
+    "ChatGpt",
 }
 
 provider_models_override = {

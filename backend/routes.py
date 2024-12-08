@@ -80,7 +80,11 @@ def get_best_model_for_provider(provider_name: str) -> str:
             status_code=422,
             detail=f"No models supported by provider: {provider_name}. Please specify a model.",
         )
-    models.sort(key=BEST_MODELS_ORDERED.index)
+
+    def _sort_key(model: str) -> int:
+        return BEST_MODELS_ORDERED.index(model) if model in BEST_MODELS_ORDERED else 999
+
+    models.sort(key=_sort_key)
     return models[0]
 
 

@@ -33,6 +33,7 @@ PROVIDER_BLACKLIST = {
     "AIUncensored",
     "AmigoChat",
     "ChatGpt",
+    "ChatGptEs",
 }
 
 provider_models_override = {

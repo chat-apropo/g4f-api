@@ -2,7 +2,7 @@ import asyncio
 import logging
 
 from g4f import AsyncClient, ProviderType
-from g4f.stubs import ChatCompletion
+from g4f.client.stubs import ChatCompletion
 
 from backend.dependencies import base_working_providers_map, provider_and_models
 from backend.errors import CustomValidationError

@@ -34,6 +34,7 @@ PROVIDER_BLACKLIST = {
     "AmigoChat",
     "ChatGpt",
     "ChatGptEs",
+    "Mhystical",
 }
 
 provider_models_override = {

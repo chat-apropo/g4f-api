@@ -8,5 +8,5 @@ jinja2==3.1.5
 curl_cffi==0.7.4
 typing-inspect==0.9.0
 aiohttp_socks==0.10.0
-browser_cookie3==0.19.1
+browser_cookie3==0.20.1
 nodriver==0.38.post1

@@ -85,8 +85,10 @@ class ProviderAndModels:
                 best_providers.update(
                     [p.__name__ for p in model.best_provider.providers]
                 )
-            else:
+            elif model.best_provider:
                 best_providers.add(model.best_provider.__name__)
+            else:
+                continue
 
             complation_model = CompletionModel(
                 name=model.name, supported_provider_names=best_providers

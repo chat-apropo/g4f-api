@@ -35,6 +35,8 @@ PROVIDER_BLACKLIST = {
     "ChatGpt",
     "ChatGptEs",
     "Mhystical",
+    "Custom",
+    "HuggingFace",
 }
 
 provider_models_override = {

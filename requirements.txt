@@ -1,6 +1,6 @@
 fastapi==0.115.8
 fastapi-utils==0.8.0
-g4f[openai,webdriver]==0.4.5.1
+g4f[openai,webdriver]==0.4.6.1
 pydantic-settings==2.7.1
 pydantic==2.10.6
 hypercorn==0.17.3

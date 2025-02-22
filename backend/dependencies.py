@@ -37,6 +37,7 @@ PROVIDER_BLACKLIST = {
     "Mhystical",
     "Custom",
     "HuggingFace",
+    "CablyAI",
 }
 
 provider_models_override = {

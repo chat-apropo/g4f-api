@@ -39,6 +39,7 @@ PROVIDER_BLACKLIST = {
     "HuggingFace",
     "CablyAI",
     "Yqcloud",
+    "Goabror",
 }
 
 provider_models_override = {

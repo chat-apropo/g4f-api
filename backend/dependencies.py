@@ -40,6 +40,7 @@ PROVIDER_BLACKLIST = {
     "CablyAI",
     "Yqcloud",
     "Goabror",
+    "Blackbox",
 }
 
 provider_models_override = {

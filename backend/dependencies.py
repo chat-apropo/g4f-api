@@ -21,7 +21,6 @@ BEST_MODELS_ORDERED = [
     "gpt-4o",
     "gpt-4o-mini",
     "gpt-4",
-    "gpt-3.5-turbo",
 ]
 PROVIDER_BLACKLIST = {
     "AItianhuSpace",
@@ -40,6 +39,7 @@ PROVIDER_BLACKLIST = {
     "CablyAI",
     "Yqcloud",
     "Goabror",
+    "FreeRouter",
 }
 
 provider_models_override = {
@@ -49,7 +49,6 @@ provider_models_override = {
         "gpt-4",
         "gpt-4-turbo",
         "chatgpt-4o-latest",
-        "gpt-3.5-turbo",
     ],
     "ChatGptEs": ["gpt-4o", "gpt-4o-mini", "chatgpt-4o-latest"],
 }

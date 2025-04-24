@@ -40,6 +40,7 @@ PROVIDER_BLACKLIST = {
     "Yqcloud",
     "Goabror",
     "FreeRouter",
+    "FreeGpt",
 }
 
 provider_models_override = {

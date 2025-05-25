@@ -127,9 +127,15 @@ class ProviderAndModels:
                     url=provider.url or "",
                 )
             if hasattr(provider, "models"):
-                self.all_working_providers_map[provider_name].supported_models.update(
-                    set(provider.models or [])
-                )
+                for model in provider.models:
+                    if isinstance(model, str):
+                        self.all_working_providers_map[
+                            provider_name
+                        ].supported_models.add(model)
+                    elif isinstance(model, dict):
+                        self.all_working_providers_map[
+                            provider_name
+                        ].supported_models.update(set(model.keys()))
 
             if hasattr(provider, "default_model"):
                 self.all_working_providers_map[provider_name].supported_models.update(

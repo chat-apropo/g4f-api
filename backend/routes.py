@@ -1,7 +1,9 @@
 import logging
+from functools import lru_cache
 from typing import NamedTuple
 
 import g4f
+import requests
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -88,6 +90,14 @@ def get_best_model_for_provider(provider_name: str) -> str:
     return models[0]
 
 
+@lru_cache(maxsize=1)
+def get_public_ip() -> str | None:
+    response = requests.get("https://api.ipify.org?format=json")
+    if not response.ok:
+        return None
+    return response.json().get("ip")
+
+
 @router_api.post("/completions")
 def post_completion(
     completion: CompletionRequest,
@@ -106,6 +116,7 @@ def post_completion(
         model_name = params.model
         provider_name = params.provider
 
+    ip_detected_response: CompletionResponse | None = None
     for attempt in range(10):
         print(f"Trying model: {model_name} and provider: {provider_name}")
         try:
@@ -120,11 +131,22 @@ def post_completion(
                     model_name, provider_name = get_nofail_params(attempt)
                     model_name = get_best_model_for_provider(provider_name)
                     continue
-                return CompletionResponse(
+
+                completion_response = CompletionResponse(
                     completion=adapt_response(model_name, response),
                     model=model_name,
                     provider=provider_name,
                 )
+
+                # HACK: Workaround for IP ban from some providers
+                ip = get_public_ip()
+                if ip is not None and ip in response.lower():
+                    if ip_detected_response is not None:
+                        ip_detected_response = completion_response
+                    continue
+
+                return completion_response
+
             raise CustomValidationError(
                 "Unexpected response type from g4f.ChatCompletion.create",
                 error={"response": str(response)},
@@ -134,6 +156,11 @@ def post_completion(
                 raise e
             provider_name = get_nofail_params(attempt).provider
             model_name = get_best_model_for_provider(provider_name)
+
+    # Better than nothing maybe
+    if ip_detected_response is not None:
+        return ip_detected_response
+
     raise HTTPException(
         status_code=500,
         detail=f"Failed to get a response from the provider. Last tried model: {model_name} and provider: {provider_name}",

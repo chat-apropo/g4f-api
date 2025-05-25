@@ -58,18 +58,24 @@ provider_models_override = {
 base_working_providers_map = {
     provider.__name__: provider
     for provider in g4f.Provider.__providers__
-    if provider.working and not provider.needs_auth and provider.__name__ not in PROVIDER_BLACKLIST
+    if provider.working
+    and not provider.needs_auth
+    and provider.__name__ not in PROVIDER_BLACKLIST
 }
 
 
 @dataclass
 class ProviderAndModels:
     all_working_provider_names: list[str] = field(default_factory=list)
-    all_working_providers_map: dict[str, CompletionProvider] = field(default_factory=dict)
+    all_working_providers_map: dict[str, CompletionProvider] = field(
+        default_factory=dict
+    )
     all_model_names: list[str] = field(default_factory=list)
     all_models_map: dict[str, CompletionModel] = field(default_factory=dict)
 
-    def update_model_providers(self, working_providers_map: dict[str, BaseProvider]) -> None:
+    def update_model_providers(
+        self, working_providers_map: dict[str, BaseProvider]
+    ) -> None:
         self.all_working_provider_names = list(working_providers_map.keys())
         self.all_working_providers_map = {}
         self.all_model_names = list(ModelUtils.convert.keys())
@@ -81,13 +87,17 @@ class ProviderAndModels:
 
             # Retry providers contain multiple recomendations
             if isinstance(model.best_provider, RetryProvider):
-                best_providers.update([p.__name__ for p in model.best_provider.providers])
+                best_providers.update(
+                    [p.__name__ for p in model.best_provider.providers]
+                )
             elif model.best_provider:
                 best_providers.add(model.best_provider.__name__)
             else:
                 continue
 
-            complation_model = CompletionModel(name=model.name, supported_provider_names=best_providers)
+            complation_model = CompletionModel(
+                name=model.name, supported_provider_names=best_providers
+            )
             self.all_models_map[model_name] = complation_model
 
             # Populate providers with recomended models
@@ -101,7 +111,9 @@ class ProviderAndModels:
                         supported_models=set(),
                         url=working_providers_map[provider_name].url or "",
                     )
-                self.all_working_providers_map[provider_name].supported_models.add(model.name)
+                self.all_working_providers_map[provider_name].supported_models.add(
+                    model.name
+                )
 
         # Populate with models declared in the provider class definitions themselves
         for provider_name in working_providers_map:
@@ -117,9 +129,13 @@ class ProviderAndModels:
             if hasattr(provider, "models"):
                 for model in provider.models:
                     if isinstance(model, str):
-                        self.all_working_providers_map[provider_name].supported_models.add(model)
+                        self.all_working_providers_map[
+                            provider_name
+                        ].supported_models.add(model)
                     elif isinstance(model, dict):
-                        self.all_working_providers_map[provider_name].supported_models.update(set(model.keys()))
+                        self.all_working_providers_map[
+                            provider_name
+                        ].supported_models.update(set(model.keys()))
 
             if hasattr(provider, "default_model"):
                 self.all_working_providers_map[provider_name].supported_models.update(
@@ -127,33 +143,53 @@ class ProviderAndModels:
                 )
 
             if hasattr(provider, "supports_gpt_4") and provider.supports_gpt_4:
-                self.all_working_providers_map[provider_name].supported_models.add("gpt-4")
+                self.all_working_providers_map[provider_name].supported_models.add(
+                    "gpt-4"
+                )
 
-            if hasattr(provider, "supports_gpt_35_turbo") and provider.supports_gpt_35_turbo:
-                self.all_working_providers_map[provider_name].supported_models.add("gpt-3.5-turbo")
+            if (
+                hasattr(provider, "supports_gpt_35_turbo")
+                and provider.supports_gpt_35_turbo
+            ):
+                self.all_working_providers_map[provider_name].supported_models.add(
+                    "gpt-3.5-turbo"
+                )
 
-            for model_name in self.all_working_providers_map[provider_name].supported_models:
+            for model_name in self.all_working_providers_map[
+                provider_name
+            ].supported_models:
                 if model_name not in self.all_models_map:
                     self.all_models_map[model_name] = CompletionModel(
                         name=model_name, supported_provider_names={provider_name}
                     )
                 else:
-                    self.all_models_map[model_name].supported_provider_names.add(provider_name)
+                    self.all_models_map[model_name].supported_provider_names.add(
+                        provider_name
+                    )
 
         # ProviderMixins also have models directly associated with them
         for provider in g4f.Provider.__providers__:
             if not provider.working:
                 continue
             provider_name = provider.__name__
-            if isinstance(provider, ProviderModelMixin) and provider_name in self.all_working_providers_map:
-                self.all_working_providers_map[provider_name].supported_models.update(provider.models)
-                for model_name in self.all_working_providers_map[provider_name].supported_models:
+            if (
+                isinstance(provider, ProviderModelMixin)
+                and provider_name in self.all_working_providers_map
+            ):
+                self.all_working_providers_map[provider_name].supported_models.update(
+                    provider.models
+                )
+                for model_name in self.all_working_providers_map[
+                    provider_name
+                ].supported_models:
                     if model_name not in self.all_models_map:
                         self.all_models_map[model_name] = CompletionModel(
                             name=model_name, supported_provider_names={provider_name}
                         )
                     else:
-                        self.all_models_map[model_name].supported_provider_names.add(provider_name)
+                        self.all_models_map[model_name].supported_provider_names.add(
+                            provider_name
+                        )
 
         self.all_model_names = list(self.all_models_map.keys())
 
@@ -184,24 +220,28 @@ def allowed_values_or_none(v: A | None, allowed: list[A]) -> A | None:
     if v is None:
         return v
     if v not in allowed:
-        raise CustomValidationError(f"Value {v} not in allowed values: {allowed}", error={})
+        raise CustomValidationError(
+            f"Value {v} not in allowed values: {allowed}", error={}
+        )
     return v
 
 
 class CompletionParams:
     def __init__(
         self,
-        model: str
-        | None = Query(
+        model: str | None = Query(
             None,
             description="LLM model to use for completion. If not specified, the best available model will be used.",
-            openapi_examples=generate_examples_from_values([None] + provider_and_models.all_model_names),
+            openapi_examples=generate_examples_from_values(
+                [None] + provider_and_models.all_model_names
+            ),
         ),
-        provider: str
-        | None = Query(
+        provider: str | None = Query(
             None,
             description="Provider to use for completion. If not specified, the best available provider will be used.",
-            openapi_examples=generate_examples_from_values([None] + provider_and_models.all_working_provider_names),
+            openapi_examples=generate_examples_from_values(
+                [None] + provider_and_models.all_working_provider_names
+            ),
         ),
     ):
         provider = provider or None
@@ -217,7 +257,9 @@ class CompletionParams:
             if provider not in provider_and_models.all_working_providers_map:
                 raise CustomValidationError(
                     f"Provider {provider} not in working providers. Check available providers with /api/providers",
-                    error={"allowed_providers": provider_and_models.all_working_provider_names},
+                    error={
+                        "allowed_providers": provider_and_models.all_working_provider_names
+                    },
                 )
             provider_model = provider_and_models.all_working_providers_map[provider]
             if model not in provider_model.supported_models:
@@ -250,4 +292,6 @@ class UiCompletionRequest(BaseModel):
         description="Provider to use for completion. If not specified, the best available provider will be used.",
     )
     message: str = Field(..., description="Current message from text input")
-    history: list[Message] = Field(default_factory=list, description="History of past messages")
+    history: list[Message] = Field(
+        default_factory=list, description="History of past messages"
+    )

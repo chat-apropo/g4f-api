@@ -11,21 +11,24 @@ jobs:
         python-version: ["3.10", "3.11", "3.12"]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
       - name: Display Python version
         run: python -c "import sys; print(sys.version)"
 
       - name: Install dependencies
-        run: pip install -r requirements-dev.txt
+        run: uv sync
 
       - name: Run tests
-        run: python -m pytest -n 10 tests/
+        run: uv run python -m pytest -n 10 tests/
 
       # Run pre commit checks
       - uses: pre-commit/action@v3.0.0
